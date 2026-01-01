@@ -1,0 +1,26 @@
+matrix-testing-suite/
+├── README.md                    # Main documentation
+├── QUICK_START.md               # Quick start guide
+├── MASTER_TEST_SUMMARY.md       # Test summary
+├── run_all_tests.sh             # Master test runner ⭐
+├── setup_test_environment.sh   # Environment setup
+├── .env.example                 # Environment template
+├── .gitignore                   # Git ignore rules
+├── tests/
+│   ├── sso_console/
+│   │   └── test_sso_console.sh      # SSO Console tests (17 tests)
+│   ├── client_connect/
+│   │   └── test_client_connect.sh   # Client Connect tests (4 tests)
+│   ├── meeting_hub/
+│   │   └── test_meeting_hub.sh      # Meeting Hub tests (6 tests)
+│   ├── workflows/
+│   │   └── test_workflows.sh        # Workflow tests (9 tests)
+│   └── isolation/
+│       └── test_isolation.sh        # Isolation tests
+├── scripts/
+│   └── auth_helper.sh           # Authentication helpers
+├── data/                        # Test data definitions
+├── results/
+│   └── latest/                  # Latest test results
+└── docs/
+    └── PRE_PRODUCTION_CHECKLIST.md

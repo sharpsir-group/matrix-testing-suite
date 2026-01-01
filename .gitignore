@@ -1,0 +1,16 @@
+# Environment files
+.env
+.env.local
+
+# Test results
+results/
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+
