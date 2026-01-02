@@ -82,6 +82,7 @@ fi
 # Test Suites
 SUITES=(
   "SSO Console:tests/sso_console/test_sso_console.sh"
+  "User Management Privilege:tests/sso_console/test_user_management_privilege.sh"
   "Client Connect:tests/client_connect/test_client_connect.sh"
   "Register Client:tests/client_connect/test_register_client.sh"
   "Meeting Hub:tests/meeting_hub/test_meeting_hub.sh"

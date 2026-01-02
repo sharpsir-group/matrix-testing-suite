@@ -14,6 +14,17 @@ Comprehensive test suite to run **before showing system to users** and **before 
 - ✅ Privilege Templates
 - ✅ Security (Access Control)
 
+### User Management Privilege (9 tests)
+- ✅ Admin can list users
+- ✅ User Manager can list users (with `user_management` privilege)
+- ✅ Regular user cannot list users (access denied)
+- ✅ Admin can reset user password
+- ✅ Admin can update user display name
+- ✅ Regular user cannot reset password (security)
+- ✅ Password validation (minimum length)
+- ✅ Last login data returned
+- ✅ User privileges in response
+
 ### Client Connect (4 tests)
 - ✅ Client Registration
 - ✅ Broker Isolation
@@ -45,7 +56,7 @@ Comprehensive test suite to run **before showing system to users** and **before 
 - ✅ Tenant-level isolation
 - ✅ Role-based access control
 
-**Total: 36+ tests covering all critical functionality**
+**Total: 45+ tests covering all critical functionality**
 
 ## 🚀 Usage
 
@@ -84,7 +95,8 @@ cd /home/bitnami/matrix-testing-suite
 
 - `run_all_tests.sh` - Master test runner
 - `setup_test_environment.sh` - Environment setup
-- `tests/sso_console/` - SSO Console tests
+- `tests/sso_console/test_sso_console.sh` - SSO Console tests
+- `tests/sso_console/test_user_management_privilege.sh` - User Management Privilege tests
 - `tests/client_connect/` - Client Connect tests
 - `tests/meeting_hub/` - Meeting Hub tests
 - `tests/workflows/` - Workflow tests
@@ -115,6 +127,7 @@ For issues:
 
 **Last Updated**: $(date)
 **Test Suite Version**: 1.0
+
 
 
 

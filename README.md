@@ -19,6 +19,17 @@ Run this test suite before:
 - Privilege Templates
 - Security (Access Control)
 
+### User Management Privilege (9 tests)
+- Admin can list users
+- User Manager can list users (with `user_management` privilege)
+- Regular user cannot list users (access denied)
+- Admin can reset user password
+- Admin can update user display name
+- Regular user cannot reset password (security)
+- Password validation (minimum length)
+- Last login data returned
+- User privileges in response
+
 ### Client Connect (4 tests)
 - Client Registration
 - Broker Isolation
@@ -50,7 +61,7 @@ Run this test suite before:
 - Tenant-level isolation
 - Role-based access control
 
-**Total: 36+ tests**
+**Total: 45+ tests**
 
 ## 🚀 Quick Start
 
@@ -177,6 +188,7 @@ For test suite issues, check:
 - Test logs: `results/latest/test_log.txt`
 - Test results: `results/latest/test_results.md`
 - Documentation: `docs/test_documentation.md`
+
 
 
 
