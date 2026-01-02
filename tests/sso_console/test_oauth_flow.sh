@@ -16,8 +16,6 @@ ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 SSO_SERVER_URL="${SUPABASE_URL}/functions/v1"
 TEST_PASSWORD="TestPass123!"
 
-SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY:-${SERVICE_ROLE_KEY:-}}"
-
 RESULTS_FILE="$(dirname "$0")/oauth_flow_test_results.md"
 PASS=0
 FAIL=0
@@ -89,34 +87,24 @@ TEST_CLIENT_ID="test-oauth-app-${TIMESTAMP}"
 TEST_REDIRECT_URI="https://test.example.com/callback"
 
 echo "Creating test OAuth application..."
-if [ -n "$SERVICE_ROLE_KEY" ]; then
-  WRITE_AUTH_HEADER="Authorization: Bearer ${SERVICE_ROLE_KEY}"
-  
-  APP_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/sso_applications" \
-    -H "apikey: ${ANON_KEY}" \
-    -H "${WRITE_AUTH_HEADER}" \
-    -H "Content-Type: application/json" \
-    -H "Prefer: return=representation" \
-    -d '{
-      "client_id": "'${TEST_CLIENT_ID}'",
-      "client_secret": "test-secret-'${TIMESTAMP}'",
-      "name": "OAuth Test Application",
-      "redirect_uris": ["'${TEST_REDIRECT_URI}'"],
-      "description": "Test application for OAuth flow",
-      "is_active": true,
-      "created_by": "'${ADMIN_USER_ID}'"
-    }')
-  
-  CLIENT_SECRET=$(echo "$APP_RESPONSE" | jq -r 'if type=="array" then .[0].client_secret else .client_secret end // empty' 2>/dev/null || echo "")
-  
-  if [ -n "$CLIENT_SECRET" ] && [ "$CLIENT_SECRET" != "null" ]; then
-    echo "✅ Created test application (Client ID: $TEST_CLIENT_ID)"
-  else
-    echo "⚠️  Failed to create application: $APP_RESPONSE"
-    TEST_CLIENT_ID=""
-  fi
+APP_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-apps" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "OAuth Test Application",
+    "redirect_uris": ["'${TEST_REDIRECT_URI}'"],
+    "description": "Test application for OAuth flow"
+  }')
+
+CREATED_CLIENT_ID=$(echo "$APP_RESPONSE" | jq -r '.client_id // empty' 2>/dev/null || echo "")
+CLIENT_SECRET=$(echo "$APP_RESPONSE" | jq -r '.client_secret // empty' 2>/dev/null || echo "")
+ERROR=$(echo "$APP_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
+
+if [ -n "$CREATED_CLIENT_ID" ] && [ "$CREATED_CLIENT_ID" != "null" ] && [ -z "$ERROR" ]; then
+  echo "✅ Created test application (Client ID: $CREATED_CLIENT_ID)"
+  TEST_CLIENT_ID="$CREATED_CLIENT_ID"
 else
-  echo "⚠️  No service_role key - cannot create test application"
+  echo "⚠️  Failed to create application: $APP_RESPONSE"
   TEST_CLIENT_ID=""
 fi
 
@@ -138,19 +126,13 @@ if [ -n "$TEST_USER_ID" ] && [ "$TEST_USER_ID" != "null" ]; then
   echo "✅ Created test user (ID: $TEST_USER_ID)"
   
   # Grant app_access privilege
-  if [ -n "$SERVICE_ROLE_KEY" ]; then
-    curl -s -X POST "${SUPABASE_URL}/rest/v1/sso_user_privileges" \
-      -H "apikey: ${ANON_KEY}" \
-      -H "${WRITE_AUTH_HEADER}" \
-      -H "Content-Type: application/json" \
-      -H "Prefer: return=representation" \
-      -d '{
-        "user_id": "'${TEST_USER_ID}'",
-        "privilege_type": "app_access",
-        "source": "local",
-        "granted_by": "'${ADMIN_USER_ID}'"
-      }' > /dev/null 2>&1 || true
-  fi
+  curl -s -X POST "${SSO_SERVER_URL}/admin-privileges/grant" \
+    -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "user_id": "'${TEST_USER_ID}'",
+      "privilege_type": "app_access"
+    }' > /dev/null 2>&1 || true
 else
   echo "⚠️  Failed to create test user"
 fi
@@ -395,10 +377,9 @@ if [ -n "$TEST_USER_ID" ] && [ "$TEST_USER_ID" != "null" ]; then
   echo "  Deleted test user"
 fi
 
-if [ -n "$TEST_CLIENT_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
-  curl -s -X DELETE "${SUPABASE_URL}/rest/v1/sso_applications?client_id=eq.${TEST_CLIENT_ID}" \
-    -H "apikey: ${ANON_KEY}" \
-    -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" > /dev/null 2>&1 || true
+if [ -n "$TEST_CLIENT_ID" ] && [ "$TEST_CLIENT_ID" != "null" ]; then
+  curl -s -X DELETE "${SSO_SERVER_URL}/admin-apps/${TEST_CLIENT_ID}" \
+    -H "Authorization: Bearer ${ADMIN_TOKEN}" > /dev/null 2>&1 || true
   echo "  Deleted test application"
 fi
 

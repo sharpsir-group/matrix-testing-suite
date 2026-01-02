@@ -21,9 +21,6 @@ ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 SSO_SERVER_URL="${SUPABASE_URL}/functions/v1"
 TEST_PASSWORD="TestPass123!"
 
-# Use service_role for write operations (RLS bypass)
-SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY:-${SERVICE_ROLE_KEY:-}}"
-
 RESULTS_FILE="$(dirname "$0")/user_management_privilege_test_results.md"
 PASS=0
 FAIL=0
@@ -124,29 +121,25 @@ echo "✅ Created user manager (ID: $USER_MANAGER_ID)"
 # Grant user_management privilege to the test user
 echo "Granting user_management privilege..."
 USER_MANAGER_PRIVILEGE_GRANTED=false
-if [ -n "$SERVICE_ROLE_KEY" ]; then
-  GRANT_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/sso_user_privileges" \
-    -H "apikey: ${ANON_KEY}" \
-    -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
-    -H "Content-Type: application/json" \
-    -H "Prefer: return=representation" \
-    -d '{
-      "user_id": "'${USER_MANAGER_ID}'",
-      "privilege_type": "user_management",
-      "source": "local",
-      "granted_by": "'${ADMIN_USER_ID}'"
-    }')
-  
-  PRIV_ID=$(echo "$GRANT_RESPONSE" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
-  
-  if [ -n "$PRIV_ID" ] && [ "$PRIV_ID" != "null" ]; then
-    echo "✅ Granted user_management privilege"
-    USER_MANAGER_PRIVILEGE_GRANTED=true
-  else
-    echo "⚠️  Failed to grant privilege: $GRANT_RESPONSE"
-  fi
+GRANT_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-privileges/grant" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "'${USER_MANAGER_ID}'",
+    "privilege_type": "user_management"
+  }')
+
+PRIV_ID=$(echo "$GRANT_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
+ERROR=$(echo "$GRANT_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
+
+if [ -n "$PRIV_ID" ] && [ "$PRIV_ID" != "null" ] && [ -z "$ERROR" ]; then
+  echo "✅ Granted user_management privilege"
+  USER_MANAGER_PRIVILEGE_GRANTED=true
+elif echo "$ERROR" | grep -qi "already exists\|duplicate"; then
+  echo "✅ Privilege already exists"
+  USER_MANAGER_PRIVILEGE_GRANTED=true
 else
-  echo "⚠️  No service_role key - cannot grant privileges directly"
+  echo "⚠️  Failed to grant privilege: $GRANT_RESPONSE"
 fi
 
 # Create a regular test user (no privileges)
@@ -224,7 +217,7 @@ fi
 # ============================================
 echo "Test 2: User Manager can list users..."
 if [ "$USER_MANAGER_PRIVILEGE_GRANTED" = "false" ]; then
-  log_test "User Manager can list users" "SKIP" "Requires SERVICE_ROLE_KEY to grant privilege to test user"
+  log_test "User Manager can list users" "SKIP" "Privilege grant failed or not yet in token"
 elif [ -n "$USER_MANAGER_TOKEN" ] && [ "$USER_MANAGER_TOKEN" != "null" ]; then
   UM_LIST_RESPONSE=$(curl -s -X GET "${SSO_SERVER_URL}/admin-users" \
     -H "Authorization: Bearer ${USER_MANAGER_TOKEN}")
@@ -434,6 +427,7 @@ echo "" >> "$RESULTS_FILE"
 echo "- The \`user_management\` privilege provides a subset of admin capabilities focused on user management" >> "$RESULTS_FILE"
 echo "- Users with this privilege can manage other users without having full admin access" >> "$RESULTS_FILE"
 echo "- JWT tokens must be refreshed after privilege changes for the privilege to take effect" >> "$RESULTS_FILE"
+echo "- All operations use admin token via edge functions (emulating UI)" >> "$RESULTS_FILE"
 echo "- Password resets require a minimum of 8 characters" >> "$RESULTS_FILE"
 echo "" >> "$RESULTS_FILE"
 

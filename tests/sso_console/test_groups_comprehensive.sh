@@ -11,8 +11,6 @@ ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 SSO_SERVER_URL="${SUPABASE_URL}/functions/v1"
 TEST_PASSWORD="TestPass123!"
 
-SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY:-${SERVICE_ROLE_KEY:-}}"
-
 RESULTS_FILE="$(dirname "$0")/groups_comprehensive_test_results.md"
 PASS=0
 FAIL=0
@@ -73,12 +71,7 @@ if [ -z "$ADMIN_TOKEN" ] || [ "$ADMIN_TOKEN" = "null" ]; then
   exit 1
 fi
 
-WRITE_AUTH_HEADER="Authorization: Bearer ${SERVICE_ROLE_KEY:-${ADMIN_TOKEN}}"
-if [ -n "$SERVICE_ROLE_KEY" ]; then
-  echo "Using service_role key for write operations"
-else
-  echo "⚠️  No service_role key - some write operations may fail"
-fi
+echo "✅ Using admin token for all operations (emulating UI)"
 echo ""
 
 TIMESTAMP=$(date +%s)
@@ -100,26 +93,22 @@ fi
 
 # Test 2: Create Group
 echo "Test 2: Create Group..."
-if [ -n "$SERVICE_ROLE_KEY" ]; then
-  CREATE_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-groups" \
-    -H "Authorization: Bearer ${ADMIN_TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d '{
-      "group_name": "'${TEST_GROUP_NAME}'",
-      "description": "Test group for comprehensive tests"
-    }')
-  
-  GROUP_ID=$(echo "$CREATE_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
-  ERROR=$(echo "$CREATE_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
-  
-  if [ -n "$GROUP_ID" ] && [ "$GROUP_ID" != "null" ] && [ -z "$ERROR" ]; then
-    log_test "Create Group" "PASS" "Created group: $GROUP_ID"
-    TEST_GROUP_ID="$GROUP_ID"
-  else
-    log_test "Create Group" "FAIL" "Failed: $CREATE_RESPONSE"
-  fi
+CREATE_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-groups" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "group_name": "'${TEST_GROUP_NAME}'",
+    "description": "Test group for comprehensive tests"
+  }')
+
+GROUP_ID=$(echo "$CREATE_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
+ERROR=$(echo "$CREATE_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
+
+if [ -n "$GROUP_ID" ] && [ "$GROUP_ID" != "null" ] && [ -z "$ERROR" ]; then
+  log_test "Create Group" "PASS" "Created group: $GROUP_ID"
+  TEST_GROUP_ID="$GROUP_ID"
 else
-  log_test "Create Group" "SKIP" "Requires service_role key"
+  log_test "Create Group" "FAIL" "Failed: $CREATE_RESPONSE"
 fi
 
 # Test 3: Get Single Group
@@ -143,7 +132,7 @@ fi
 
 # Test 4: Update Group
 echo "Test 4: Update Group..."
-if [ -n "$TEST_GROUP_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
+if [ -n "$TEST_GROUP_ID" ] && [ "$TEST_GROUP_ID" != "null" ]; then
   UPDATE_RESPONSE=$(curl -s -X PUT "${SSO_SERVER_URL}/admin-groups/${TEST_GROUP_ID}" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
@@ -158,10 +147,10 @@ if [ -n "$TEST_GROUP_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
   if [ -n "$UPDATED_NAME" ] && [ -z "$ERROR" ]; then
     log_test "Update Group" "PASS" "Successfully updated group"
   else
-    log_test "Update Group" "SKIP" "Update may require service_role or failed: $UPDATE_RESPONSE"
+    log_test "Update Group" "FAIL" "Update failed: $UPDATE_RESPONSE"
   fi
 else
-  log_test "Update Group" "SKIP" "Test group or service_role key not available"
+  log_test "Update Group" "SKIP" "Test group not created"
 fi
 
 # Test 5: Get Group Members
@@ -184,7 +173,7 @@ fi
 
 # Test 6: Add Member to Group
 echo "Test 6: Add Member to Group..."
-if [ -n "$TEST_GROUP_ID" ] && [ -n "$ADMIN_USER_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
+if [ -n "$TEST_GROUP_ID" ] && [ -n "$ADMIN_USER_ID" ]; then
   ADD_MEMBER_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-groups/${TEST_GROUP_ID}/members" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
@@ -200,15 +189,15 @@ if [ -n "$TEST_GROUP_ID" ] && [ -n "$ADMIN_USER_ID" ] && [ -n "$SERVICE_ROLE_KEY
   elif echo "$ERROR" | grep -qi "already exists\|duplicate"; then
     log_test "Add Member to Group" "PASS" "Member already in group (expected)"
   else
-    log_test "Add Member to Group" "SKIP" "Add member may require service_role or failed: $ADD_MEMBER_RESPONSE"
+    log_test "Add Member to Group" "FAIL" "Add member failed: $ADD_MEMBER_RESPONSE"
   fi
 else
-  log_test "Add Member to Group" "SKIP" "Test group, user, or service_role key not available"
+  log_test "Add Member to Group" "SKIP" "Test group or user not available"
 fi
 
 # Test 7: Remove Member from Group
 echo "Test 7: Remove Member from Group..."
-if [ -n "$TEST_GROUP_ID" ] && [ -n "$ADMIN_USER_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
+if [ -n "$TEST_GROUP_ID" ] && [ -n "$ADMIN_USER_ID" ]; then
   REMOVE_MEMBER_RESPONSE=$(curl -s -X DELETE "${SSO_SERVER_URL}/admin-groups/${TEST_GROUP_ID}/members/${ADMIN_USER_ID}" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}")
   
@@ -218,10 +207,10 @@ if [ -n "$TEST_GROUP_ID" ] && [ -n "$ADMIN_USER_ID" ] && [ -n "$SERVICE_ROLE_KEY
   if [ "$SUCCESS" = "true" ] || [ -z "$ERROR" ]; then
     log_test "Remove Member from Group" "PASS" "Successfully removed member from group"
   else
-    log_test "Remove Member from Group" "SKIP" "Remove member may require service_role or failed: $REMOVE_MEMBER_RESPONSE"
+    log_test "Remove Member from Group" "FAIL" "Remove member failed: $REMOVE_MEMBER_RESPONSE"
   fi
 else
-  log_test "Remove Member from Group" "SKIP" "Test group, user, or service_role key not available"
+  log_test "Remove Member from Group" "SKIP" "Test group or user not available"
 fi
 
 # Test 8: Sync AD Groups
@@ -240,7 +229,7 @@ fi
 
 # Test 9: Delete Group
 echo "Test 9: Delete Group..."
-if [ -n "$TEST_GROUP_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
+if [ -n "$TEST_GROUP_ID" ] && [ "$TEST_GROUP_ID" != "null" ]; then
   DELETE_RESPONSE=$(curl -s -X DELETE "${SSO_SERVER_URL}/admin-groups/${TEST_GROUP_ID}" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}")
   
@@ -256,10 +245,10 @@ if [ -n "$TEST_GROUP_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
   if [ -n "$VERIFY_ERROR" ] || [ "$SUCCESS" = "true" ]; then
     log_test "Delete Group" "PASS" "Successfully deleted group"
   else
-    log_test "Delete Group" "SKIP" "Delete may require service_role or failed: $DELETE_RESPONSE"
+    log_test "Delete Group" "FAIL" "Delete failed: $DELETE_RESPONSE"
   fi
 else
-  log_test "Delete Group" "SKIP" "Test group or service_role key not available"
+  log_test "Delete Group" "SKIP" "Test group not created"
 fi
 
 # Summary

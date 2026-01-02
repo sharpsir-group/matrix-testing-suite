@@ -11,8 +11,6 @@ ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 SSO_SERVER_URL="${SUPABASE_URL}/functions/v1"
 TEST_PASSWORD="TestPass123!"
 
-SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY:-${SERVICE_ROLE_KEY:-}}"
-
 RESULTS_FILE="$(dirname "$0")/applications_comprehensive_test_results.md"
 PASS=0
 FAIL=0
@@ -72,12 +70,7 @@ if [ -z "$ADMIN_TOKEN" ] || [ "$ADMIN_TOKEN" = "null" ]; then
   exit 1
 fi
 
-WRITE_AUTH_HEADER="Authorization: Bearer ${SERVICE_ROLE_KEY:-${ADMIN_TOKEN}}"
-if [ -n "$SERVICE_ROLE_KEY" ]; then
-  echo "Using service_role key for write operations"
-else
-  echo "⚠️  No service_role key - some write operations may fail"
-fi
+echo "✅ Using admin token for all operations (emulating UI)"
 echo ""
 
 TIMESTAMP=$(date +%s)
@@ -101,28 +94,24 @@ fi
 
 # Test 2: Create Application
 echo "Test 2: Create Application..."
-if [ -n "$SERVICE_ROLE_KEY" ]; then
-  CREATE_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-apps" \
-    -H "Authorization: Bearer ${ADMIN_TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d '{
-      "name": "'${TEST_APP_NAME}'",
-      "redirect_uris": ["'${TEST_REDIRECT_URI}'"],
-      "description": "Test application for comprehensive tests"
-    }')
-  
-  CREATED_CLIENT_ID=$(echo "$CREATE_RESPONSE" | jq -r '.client_id // empty' 2>/dev/null || echo "")
-  CREATED_CLIENT_SECRET=$(echo "$CREATE_RESPONSE" | jq -r '.client_secret // empty' 2>/dev/null || echo "")
-  ERROR=$(echo "$CREATE_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
-  
-  if [ -n "$CREATED_CLIENT_ID" ] && [ "$CREATED_CLIENT_ID" != "null" ] && [ -z "$ERROR" ]; then
-    log_test "Create Application" "PASS" "Created application: $CREATED_CLIENT_ID"
-    TEST_APP_CLIENT_ID="$CREATED_CLIENT_ID"
-  else
-    log_test "Create Application" "FAIL" "Failed: $CREATE_RESPONSE"
-  fi
+CREATE_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-apps" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "'${TEST_APP_NAME}'",
+    "redirect_uris": ["'${TEST_REDIRECT_URI}'"],
+    "description": "Test application for comprehensive tests"
+  }')
+
+CREATED_CLIENT_ID=$(echo "$CREATE_RESPONSE" | jq -r '.client_id // empty' 2>/dev/null || echo "")
+CREATED_CLIENT_SECRET=$(echo "$CREATE_RESPONSE" | jq -r '.client_secret // empty' 2>/dev/null || echo "")
+ERROR=$(echo "$CREATE_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
+
+if [ -n "$CREATED_CLIENT_ID" ] && [ "$CREATED_CLIENT_ID" != "null" ] && [ -z "$ERROR" ]; then
+  log_test "Create Application" "PASS" "Created application: $CREATED_CLIENT_ID"
+  TEST_APP_CLIENT_ID="$CREATED_CLIENT_ID"
 else
-  log_test "Create Application" "SKIP" "Requires service_role key"
+  log_test "Create Application" "FAIL" "Failed: $CREATE_RESPONSE"
 fi
 
 # Test 3: Get Single Application
@@ -145,7 +134,7 @@ fi
 
 # Test 4: Update Application
 echo "Test 4: Update Application..."
-if [ -n "$TEST_APP_CLIENT_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
+if [ -n "$TEST_APP_CLIENT_ID" ] && [ "$TEST_APP_CLIENT_ID" != "null" ]; then
   UPDATE_RESPONSE=$(curl -s -X PUT "${SSO_SERVER_URL}/admin-apps/${TEST_APP_CLIENT_ID}" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
@@ -160,15 +149,15 @@ if [ -n "$TEST_APP_CLIENT_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
   if [ "$UPDATED_NAME" = "Updated Test Application" ] && [ -z "$ERROR" ]; then
     log_test "Update Application" "PASS" "Successfully updated application"
   else
-    log_test "Update Application" "SKIP" "Update may require service_role or failed: $UPDATE_RESPONSE"
+    log_test "Update Application" "FAIL" "Update failed: $UPDATE_RESPONSE"
   fi
 else
-  log_test "Update Application" "SKIP" "Test application or service_role key not available"
+  log_test "Update Application" "SKIP" "Test application not created"
 fi
 
 # Test 5: Regenerate Client Secret
 echo "Test 5: Regenerate Client Secret..."
-if [ -n "$TEST_APP_CLIENT_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
+if [ -n "$TEST_APP_CLIENT_ID" ] && [ "$TEST_APP_CLIENT_ID" != "null" ]; then
   REGEN_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-apps/${TEST_APP_CLIENT_ID}/regenerate-secret" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json")
@@ -179,12 +168,12 @@ if [ -n "$TEST_APP_CLIENT_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
   if [ -n "$NEW_SECRET" ] && [ "$NEW_SECRET" != "null" ] && [ "$NEW_SECRET" != "$CREATED_CLIENT_SECRET" ] && [ -z "$ERROR" ]; then
     log_test "Regenerate Client Secret" "PASS" "Successfully regenerated client secret"
   elif [ -n "$ERROR" ]; then
-    log_test "Regenerate Client Secret" "SKIP" "Regenerate failed: $ERROR"
+    log_test "Regenerate Client Secret" "FAIL" "Regenerate failed: $ERROR"
   else
-    log_test "Regenerate Client Secret" "SKIP" "May require service_role key"
+    log_test "Regenerate Client Secret" "FAIL" "Secret not regenerated: $REGEN_RESPONSE"
   fi
 else
-  log_test "Regenerate Client Secret" "SKIP" "Test application or service_role key not available"
+  log_test "Regenerate Client Secret" "SKIP" "Test application not created"
 fi
 
 # Test 6: Get App Groups
@@ -225,7 +214,7 @@ fi
 
 # Test 8: Delete Application
 echo "Test 8: Delete Application..."
-if [ -n "$TEST_APP_CLIENT_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
+if [ -n "$TEST_APP_CLIENT_ID" ] && [ "$TEST_APP_CLIENT_ID" != "null" ]; then
   DELETE_RESPONSE=$(curl -s -X DELETE "${SSO_SERVER_URL}/admin-apps/${TEST_APP_CLIENT_ID}" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}")
   
@@ -241,10 +230,10 @@ if [ -n "$TEST_APP_CLIENT_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
   if [ -n "$VERIFY_ERROR" ] || [ "$SUCCESS" = "true" ]; then
     log_test "Delete Application" "PASS" "Successfully deleted application"
   else
-    log_test "Delete Application" "SKIP" "Delete may require service_role or failed: $DELETE_RESPONSE"
+    log_test "Delete Application" "FAIL" "Delete failed: $DELETE_RESPONSE"
   fi
 else
-  log_test "Delete Application" "SKIP" "Test application or service_role key not available"
+  log_test "Delete Application" "SKIP" "Test application not created"
 fi
 
 # Summary

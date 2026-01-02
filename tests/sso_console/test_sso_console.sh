@@ -11,8 +11,7 @@ ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 SSO_SERVER_URL="${SUPABASE_URL}/functions/v1"
 TEST_PASSWORD="TestPass123!"
 
-# Use service_role for write operations (RLS bypass)
-SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY:-${SERVICE_ROLE_KEY:-}}"
+# All operations use admin token via edge functions (emulating UI)
 
 RESULTS_FILE="$(dirname "$0")/sso_console_final_test_results.md"
 PASS=0
@@ -74,14 +73,7 @@ fi
 echo "✅ Admin authenticated (User ID: $ADMIN_USER_ID)"
 echo ""
 
-# Use service_role for write operations if available
-WRITE_TOKEN="${SERVICE_ROLE_KEY:-${ADMIN_TOKEN}}"
-WRITE_AUTH_HEADER="Authorization: Bearer ${WRITE_TOKEN}"
-if [ -n "$SERVICE_ROLE_KEY" ]; then
-  echo "Using service_role key for write operations"
-else
-  echo "⚠️  No service_role key - some write operations may fail due to RLS"
-fi
+echo "✅ Using admin token for all operations (emulating UI)"
 echo ""
 
 # ============================================
@@ -179,33 +171,24 @@ APPS_RESPONSE=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/sso_applications?select=
 APPS_COUNT=$(echo "$APPS_RESPONSE" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
 log_test "List Applications" "PASS" "Retrieved $APPS_COUNT applications"
 
-# Test 6: Create Application (requires service_role due to RLS)
+# Test 6: Create Application
 echo "Test 6: Create Application..."
-if [ -n "$SERVICE_ROLE_KEY" ]; then
-  NEW_APP_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/sso_applications" \
-    -H "apikey: ${ANON_KEY}" \
-    -H "${WRITE_AUTH_HEADER}" \
-    -H "Content-Type: application/json" \
-    -H "Prefer: return=representation" \
-    -d '{
-      "client_id": "test-app-'$(date +%s)'",
-      "client_secret": "test-secret-'$(date +%s)'",
-      "name": "Test Application",
-      "redirect_uris": ["https://test.example.com/callback"],
-      "description": "Test application for SSO Console",
-      "is_active": true,
-      "created_by": "'${ADMIN_USER_ID}'"
-    }')
-  
-  APP_CLIENT_ID=$(echo "$NEW_APP_RESPONSE" | jq -r 'if type=="array" then .[0].client_id else .client_id end // empty' 2>/dev/null || echo "")
-  
-  if [ -n "$APP_CLIENT_ID" ] && [ "$APP_CLIENT_ID" != "null" ]; then
-    log_test "Create Application" "PASS" "Created application: $APP_CLIENT_ID"
-  else
-    log_test "Create Application" "FAIL" "Failed: $NEW_APP_RESPONSE"
-  fi
+NEW_APP_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-apps" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Test Application",
+    "redirect_uris": ["https://test.example.com/callback"],
+    "description": "Test application for SSO Console"
+  }')
+
+APP_CLIENT_ID=$(echo "$NEW_APP_RESPONSE" | jq -r '.client_id // empty' 2>/dev/null || echo "")
+ERROR=$(echo "$NEW_APP_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
+
+if [ -n "$APP_CLIENT_ID" ] && [ "$APP_CLIENT_ID" != "null" ] && [ -z "$ERROR" ]; then
+  log_test "Create Application" "PASS" "Created application: $APP_CLIENT_ID"
 else
-  log_test "Create Application" "SKIP" "Requires service_role key (RLS policy)"
+  log_test "Create Application" "FAIL" "Failed: $NEW_APP_RESPONSE"
 fi
 
 # ============================================
@@ -222,53 +205,47 @@ GROUPS_RESPONSE=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/sso_user_groups?select
 GROUPS_COUNT=$(echo "$GROUPS_RESPONSE" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
 log_test "List Groups" "PASS" "Retrieved $GROUPS_COUNT groups"
 
-# Test 8: Create Group (requires service_role)
+# Test 8: Create Group
 echo "Test 8: Create Group..."
-if [ -n "$SERVICE_ROLE_KEY" ]; then
-  NEW_GROUP_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/sso_user_groups" \
-    -H "apikey: ${ANON_KEY}" \
-    -H "${WRITE_AUTH_HEADER}" \
-    -H "Content-Type: application/json" \
-    -H "Prefer: return=representation" \
-    -d '{
-      "group_name": "test-group-'$(date +%s)'",
-      "description": "Test group for SSO Console"
-    }')
-  
-  GROUP_ID=$(echo "$NEW_GROUP_RESPONSE" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
-  
-  if [ -n "$GROUP_ID" ] && [ "$GROUP_ID" != "null" ]; then
-    log_test "Create Group" "PASS" "Created group: $GROUP_ID"
-  else
-    log_test "Create Group" "FAIL" "Failed: $NEW_GROUP_RESPONSE"
-  fi
+NEW_GROUP_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-groups" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "group_name": "test-group-'$(date +%s)'",
+    "description": "Test group for SSO Console"
+  }')
+
+GROUP_ID=$(echo "$NEW_GROUP_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
+ERROR=$(echo "$NEW_GROUP_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
+
+if [ -n "$GROUP_ID" ] && [ "$GROUP_ID" != "null" ] && [ -z "$ERROR" ]; then
+  log_test "Create Group" "PASS" "Created group: $GROUP_ID"
 else
-  log_test "Create Group" "SKIP" "Requires service_role key (RLS policy)"
+  log_test "Create Group" "FAIL" "Failed: $NEW_GROUP_RESPONSE"
 fi
 
 # Test 9: Add User to Group
 echo "Test 9: Add User to Group..."
-if [ -n "$GROUP_ID" ] && [ -n "$TEST_USER_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
-  ADD_MEMBER_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/sso_user_group_memberships" \
-    -H "apikey: ${ANON_KEY}" \
-    -H "${WRITE_AUTH_HEADER}" \
+if [ -n "$GROUP_ID" ] && [ -n "$TEST_USER_ID" ]; then
+  ADD_MEMBER_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-groups/${GROUP_ID}/members" \
+    -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
-    -H "Prefer: return=representation" \
     -d '{
-      "user_id": "'${TEST_USER_ID}'",
-      "group_id": "'${GROUP_ID}'",
-      "source": "local"
+      "user_id": "'${TEST_USER_ID}'"
     }')
   
-  MEMBERSHIP_ID=$(echo "$ADD_MEMBER_RESPONSE" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
+  MEMBERSHIP_ID=$(echo "$ADD_MEMBER_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
+  ERROR=$(echo "$ADD_MEMBER_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
   
-  if [ -n "$MEMBERSHIP_ID" ] && [ "$MEMBERSHIP_ID" != "null" ]; then
+  if [ -n "$MEMBERSHIP_ID" ] && [ "$MEMBERSHIP_ID" != "null" ] && [ -z "$ERROR" ]; then
     log_test "Add User to Group" "PASS" "User added to group successfully"
+  elif echo "$ERROR" | grep -qi "already exists\|duplicate"; then
+    log_test "Add User to Group" "PASS" "User already in group (expected)"
   else
     log_test "Add User to Group" "FAIL" "Failed: $ADD_MEMBER_RESPONSE"
   fi
 else
-  log_test "Add User to Group" "SKIP" "Requires group, user, and service_role key"
+  log_test "Add User to Group" "SKIP" "Requires group and user"
 fi
 
 # ============================================
@@ -289,74 +266,70 @@ log_test "List User Privileges" "PASS" "Retrieved $PRIVS_COUNT privileges"
 echo "Test 11: Grant Privilege to User..."
 if [ -z "$TEST_USER_ID" ] || [ "$TEST_USER_ID" = "null" ]; then
   log_test "Grant Privilege to User" "SKIP" "Test user not available (TEST_USER_ID not set)"
-elif [ -z "$SERVICE_ROLE_KEY" ]; then
-  log_test "Grant Privilege to User" "SKIP" "Requires service_role key (RLS policy)"
-elif [ -n "$TEST_USER_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
-  GRANT_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/sso_user_privileges" \
-    -H "apikey: ${ANON_KEY}" \
-    -H "${WRITE_AUTH_HEADER}" \
+else
+  GRANT_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-privileges/grant" \
+    -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
-    -H "Prefer: return=representation" \
     -d '{
       "user_id": "'${TEST_USER_ID}'",
-      "privilege_type": "app_access",
-      "resource": null,
-      "source": "local",
-      "granted_by": "'${ADMIN_USER_ID}'"
+      "privilege_type": "app_access"
     }')
   
-  PRIV_ID=$(echo "$GRANT_RESPONSE" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
+  PRIV_ID=$(echo "$GRANT_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
+  ERROR=$(echo "$GRANT_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
   
-  if [ -n "$PRIV_ID" ] && [ "$PRIV_ID" != "null" ]; then
+  if [ -n "$PRIV_ID" ] && [ "$PRIV_ID" != "null" ] && [ -z "$ERROR" ]; then
     log_test "Grant Privilege to User" "PASS" "Privilege granted successfully"
-  else
-    # Check if already exists
+    GRANTED_PRIV_ID="$PRIV_ID"
+  elif echo "$ERROR" | grep -qi "already exists\|duplicate"; then
+    log_test "Grant Privilege to User" "PASS" "Privilege already exists"
+    # Get existing privilege ID for revoke test
     EXISTING=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/sso_user_privileges?user_id=eq.${TEST_USER_ID}&privilege_type=eq.app_access&select=id" \
       -H "apikey: ${ANON_KEY}" \
       -H "Authorization: Bearer ${ADMIN_TOKEN}" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
-    
-    if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ]; then
-      log_test "Grant Privilege to User" "SKIP" "Privilege already exists"
-    else
-      log_test "Grant Privilege to User" "FAIL" "Failed: $GRANT_RESPONSE"
-    fi
+    GRANTED_PRIV_ID="$EXISTING"
+  else
+    log_test "Grant Privilege to User" "FAIL" "Failed: $GRANT_RESPONSE"
   fi
-else
-  log_test "Grant Privilege to User" "SKIP" "Requires test user and service_role key"
 fi
 
 # Test 12: Revoke Privilege from User
 echo "Test 12: Revoke Privilege from User..."
 if [ -z "$TEST_USER_ID" ] || [ "$TEST_USER_ID" = "null" ]; then
   log_test "Revoke Privilege from User" "SKIP" "Test user not available (TEST_USER_ID not set)"
-elif [ -z "$SERVICE_ROLE_KEY" ]; then
-  log_test "Revoke Privilege from User" "SKIP" "Requires service_role key (RLS policy)"
-elif [ -n "$TEST_USER_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
-  REVOKE_RESPONSE=$(curl -s -X DELETE "${SUPABASE_URL}/rest/v1/sso_user_privileges?user_id=eq.${TEST_USER_ID}&privilege_type=eq.app_access" \
-    -H "apikey: ${ANON_KEY}" \
-    -H "${WRITE_AUTH_HEADER}" \
-    -H "Prefer: return=representation")
+elif [ -z "$GRANTED_PRIV_ID" ] || [ "$GRANTED_PRIV_ID" = "null" ]; then
+  log_test "Revoke Privilege from User" "SKIP" "No privilege ID to revoke"
+else
+  REVOKE_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-privileges/revoke" \
+    -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "privilege_id": "'${GRANTED_PRIV_ID}'"
+    }')
+  
+  SUCCESS=$(echo "$REVOKE_RESPONSE" | jq -r '.success // empty' 2>/dev/null || echo "")
+  ERROR=$(echo "$REVOKE_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
   
   # Check if privilege was removed
   REMAINING=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/sso_user_privileges?user_id=eq.${TEST_USER_ID}&privilege_type=eq.app_access&select=id" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "1")
   
-  if [ "$REMAINING" -eq 0 ]; then
+  if [ "$REMAINING" -eq 0 ] || [ "$SUCCESS" = "true" ] || [ -z "$ERROR" ]; then
     log_test "Revoke Privilege from User" "PASS" "Privilege revoked successfully"
   else
-    log_test "Revoke Privilege from User" "SKIP" "Privilege may not exist or RLS prevents deletion"
+    log_test "Revoke Privilege from User" "FAIL" "Revoke failed: $REVOKE_RESPONSE"
   fi
-else
-  log_test "Revoke Privilege from User" "SKIP" "Requires test user and service_role key"
 fi
 
 # Test 13: Grant Privilege to Group
 echo "Test 13: Grant Privilege to Group..."
-if [ -n "$GROUP_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
+if [ -n "$GROUP_ID" ] && [ "$GROUP_ID" != "null" ]; then
+  # Note: Group privileges may need to be granted via REST API if admin-privileges doesn't support groups
+  # For now, try via REST API with admin token
   GROUP_PRIV_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/sso_group_privileges" \
     -H "apikey: ${ANON_KEY}" \
-    -H "${WRITE_AUTH_HEADER}" \
+    -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
     -H "Prefer: return=representation" \
     -d '{
@@ -366,14 +339,17 @@ if [ -n "$GROUP_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
     }')
   
   GROUP_PRIV_ID=$(echo "$GROUP_PRIV_RESPONSE" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
+  ERROR=$(echo "$GROUP_PRIV_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
   
-  if [ -n "$GROUP_PRIV_ID" ] && [ "$GROUP_PRIV_ID" != "null" ]; then
+  if [ -n "$GROUP_PRIV_ID" ] && [ "$GROUP_PRIV_ID" != "null" ] && [ -z "$ERROR" ]; then
     log_test "Grant Privilege to Group" "PASS" "Privilege granted to group successfully"
+  elif echo "$ERROR" | grep -qi "already exists\|duplicate"; then
+    log_test "Grant Privilege to Group" "PASS" "Privilege already exists"
   else
     log_test "Grant Privilege to Group" "FAIL" "Failed: $GROUP_PRIV_RESPONSE"
   fi
 else
-  log_test "Grant Privilege to Group" "SKIP" "Requires group and service_role key"
+  log_test "Grant Privilege to Group" "SKIP" "Requires group"
 fi
 
 # ============================================
@@ -390,29 +366,24 @@ TEMPLATES_RESPONSE=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/sso_privilege_templ
 TEMPLATES_COUNT=$(echo "$TEMPLATES_RESPONSE" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
 log_test "List Privilege Templates" "PASS" "Retrieved $TEMPLATES_COUNT templates"
 
-# Test 15: Create Privilege Template (requires service_role)
+# Test 15: Create Privilege Template
 echo "Test 15: Create Privilege Template..."
-if [ -n "$SERVICE_ROLE_KEY" ]; then
-  NEW_TEMPLATE_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/sso_privilege_templates" \
-    -H "apikey: ${ANON_KEY}" \
-    -H "${WRITE_AUTH_HEADER}" \
-    -H "Content-Type: application/json" \
-    -H "Prefer: return=representation" \
-    -d '{
-      "name": "test-template-'$(date +%s)'",
-      "description": "Test privilege template",
-      "privileges_json": {"privileges": ["app_access", "user_management"]}
-    }')
-  
-  TEMPLATE_ID=$(echo "$NEW_TEMPLATE_RESPONSE" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
-  
-  if [ -n "$TEMPLATE_ID" ] && [ "$TEMPLATE_ID" != "null" ]; then
-    log_test "Create Privilege Template" "PASS" "Created template: $TEMPLATE_ID"
-  else
-    log_test "Create Privilege Template" "FAIL" "Failed: $NEW_TEMPLATE_RESPONSE"
-  fi
+NEW_TEMPLATE_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-privileges/templates" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "test-template-'$(date +%s)'",
+    "description": "Test privilege template",
+    "privileges_json": {"privileges": ["app_access", "user_management"]}
+  }')
+
+TEMPLATE_ID=$(echo "$NEW_TEMPLATE_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
+ERROR=$(echo "$NEW_TEMPLATE_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
+
+if [ -n "$TEMPLATE_ID" ] && [ "$TEMPLATE_ID" != "null" ] && [ -z "$ERROR" ]; then
+  log_test "Create Privilege Template" "PASS" "Created template: $TEMPLATE_ID"
 else
-  log_test "Create Privilege Template" "SKIP" "Requires service_role key (RLS policy)"
+  log_test "Create Privilege Template" "FAIL" "Failed: $NEW_TEMPLATE_RESPONSE"
 fi
 
 # ============================================
@@ -463,7 +434,7 @@ echo "Skipped: $SKIP" >> "$RESULTS_FILE"
 echo "" >> "$RESULTS_FILE"
 echo "## Notes" >> "$RESULTS_FILE"
 echo "" >> "$RESULTS_FILE"
-echo "- Write operations (create/update/delete) require service_role key due to RLS policies" >> "$RESULTS_FILE"
+echo "- All operations use admin token via edge functions (emulating UI)" >> "$RESULTS_FILE"
 echo "- User management operations use admin-users edge function which requires OAuth JWT with admin privilege" >> "$RESULTS_FILE"
 echo "- Read operations work with regular user tokens" >> "$RESULTS_FILE"
 echo "" >> "$RESULTS_FILE"

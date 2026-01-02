@@ -11,8 +11,6 @@ ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 SSO_SERVER_URL="${SUPABASE_URL}/functions/v1"
 TEST_PASSWORD="TestPass123!"
 
-SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY:-${SERVICE_ROLE_KEY:-}}"
-
 RESULTS_FILE="$(dirname "$0")/privileges_comprehensive_test_results.md"
 PASS=0
 FAIL=0
@@ -70,12 +68,7 @@ if [ -z "$ADMIN_TOKEN" ] || [ "$ADMIN_TOKEN" = "null" ]; then
   exit 1
 fi
 
-WRITE_AUTH_HEADER="Authorization: Bearer ${SERVICE_ROLE_KEY:-${ADMIN_TOKEN}}"
-if [ -n "$SERVICE_ROLE_KEY" ]; then
-  echo "Using service_role key for write operations"
-else
-  echo "⚠️  No service_role key - some write operations may fail"
-fi
+echo "✅ Using admin token for all operations (emulating UI)"
 echo ""
 
 TIMESTAMP=$(date +%s)
@@ -116,7 +109,7 @@ fi
 
 # Test 2: Grant Privilege
 echo "Test 2: Grant Privilege..."
-if [ -n "$TEST_USER_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
+if [ -n "$TEST_USER_ID" ] && [ "$TEST_USER_ID" != "null" ]; then
   GRANT_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-privileges/grant" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
@@ -134,15 +127,15 @@ if [ -n "$TEST_USER_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
   elif echo "$ERROR" | grep -qi "already exists\|duplicate"; then
     log_test "Grant Privilege" "PASS" "Privilege already exists (expected)"
   else
-    log_test "Grant Privilege" "SKIP" "Grant may require service_role or failed: $GRANT_RESPONSE"
+    log_test "Grant Privilege" "FAIL" "Grant failed: $GRANT_RESPONSE"
   fi
 else
-  log_test "Grant Privilege" "SKIP" "Test user or service_role key not available"
+  log_test "Grant Privilege" "SKIP" "Test user not available"
 fi
 
 # Test 3: Revoke Privilege
 echo "Test 3: Revoke Privilege..."
-if [ -n "$GRANTED_PRIV_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
+if [ -n "$GRANTED_PRIV_ID" ] && [ "$GRANTED_PRIV_ID" != "null" ]; then
   REVOKE_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-privileges/revoke" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
@@ -156,10 +149,10 @@ if [ -n "$GRANTED_PRIV_ID" ] && [ -n "$SERVICE_ROLE_KEY" ]; then
   if [ "$SUCCESS" = "true" ] || [ -z "$ERROR" ]; then
     log_test "Revoke Privilege" "PASS" "Successfully revoked privilege"
   else
-    log_test "Revoke Privilege" "SKIP" "Revoke may require service_role or failed: $REVOKE_RESPONSE"
+    log_test "Revoke Privilege" "FAIL" "Revoke failed: $REVOKE_RESPONSE"
   fi
 else
-  log_test "Revoke Privilege" "SKIP" "Granted privilege ID or service_role key not available"
+  log_test "Revoke Privilege" "SKIP" "Granted privilege ID not available"
 fi
 
 # Test 4: List Privilege Templates
@@ -178,26 +171,22 @@ fi
 
 # Test 5: Create Privilege Template
 echo "Test 5: Create Privilege Template..."
-if [ -n "$SERVICE_ROLE_KEY" ]; then
-  CREATE_TEMPLATE_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-privileges/templates" \
-    -H "Authorization: Bearer ${ADMIN_TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d '{
-      "name": "test-template-'${TIMESTAMP}'",
-      "description": "Test privilege template",
-      "privileges_json": {"privileges": ["app_access", "user_management"]}
-    }')
-  
-  TEMPLATE_ID=$(echo "$CREATE_TEMPLATE_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
-  ERROR=$(echo "$CREATE_TEMPLATE_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
-  
-  if [ -n "$TEMPLATE_ID" ] && [ "$TEMPLATE_ID" != "null" ] && [ -z "$ERROR" ]; then
-    log_test "Create Privilege Template" "PASS" "Created template: $TEMPLATE_ID"
-  else
-    log_test "Create Privilege Template" "SKIP" "Create template may require service_role or failed: $CREATE_TEMPLATE_RESPONSE"
-  fi
+CREATE_TEMPLATE_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-privileges/templates" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "test-template-'${TIMESTAMP}'",
+    "description": "Test privilege template",
+    "privileges_json": {"privileges": ["app_access", "user_management"]}
+  }')
+
+TEMPLATE_ID=$(echo "$CREATE_TEMPLATE_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
+ERROR=$(echo "$CREATE_TEMPLATE_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
+
+if [ -n "$TEMPLATE_ID" ] && [ "$TEMPLATE_ID" != "null" ] && [ -z "$ERROR" ]; then
+  log_test "Create Privilege Template" "PASS" "Created template: $TEMPLATE_ID"
 else
-  log_test "Create Privilege Template" "SKIP" "Requires service_role key"
+  log_test "Create Privilege Template" "FAIL" "Create template failed: $CREATE_TEMPLATE_RESPONSE"
 fi
 
 # Test 6: Get Audit Log
