@@ -146,14 +146,18 @@ echo ""
 # TEST 1: OAuth Authorize - Missing Parameters
 # ============================================
 echo "Test 1: OAuth Authorize - Missing Parameters..."
-AUTHORIZE_RESPONSE=$(curl -s -X GET "${SSO_SERVER_URL}/oauth-authorize")
+AUTHORIZE_RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "${SSO_SERVER_URL}/oauth-authorize")
+HTTP_STATUS=$(echo "$AUTHORIZE_RESPONSE" | tail -n1)
+RESPONSE_BODY=$(echo "$AUTHORIZE_RESPONSE" | sed '$d')
 
-ERROR=$(echo "$AUTHORIZE_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
+ERROR=$(echo "$RESPONSE_BODY" | jq -r '.error // empty' 2>/dev/null || echo "")
 
-if [ -n "$ERROR" ] && [ "$ERROR" != "null" ]; then
-  log_test "OAuth Authorize - Missing Parameters" "PASS" "Properly rejected request with missing parameters: $ERROR"
+if [ "$HTTP_STATUS" = "400" ] && [ -n "$ERROR" ] && [ "$ERROR" != "null" ]; then
+  log_test "OAuth Authorize - Missing Parameters" "PASS" "Properly rejected request with missing parameters (HTTP $HTTP_STATUS): $ERROR"
+elif [ "$HTTP_STATUS" = "500" ]; then
+  log_test "OAuth Authorize - Missing Parameters" "FAIL" "Server error (500) when missing parameters: $RESPONSE_BODY"
 else
-  log_test "OAuth Authorize - Missing Parameters" "FAIL" "Should reject request with missing parameters"
+  log_test "OAuth Authorize - Missing Parameters" "FAIL" "Should reject request with missing parameters (got HTTP $HTTP_STATUS): $RESPONSE_BODY"
 fi
 
 # ============================================
@@ -161,14 +165,18 @@ fi
 # ============================================
 echo "Test 2: OAuth Authorize - Invalid Client..."
 if [ -n "$TEST_CLIENT_ID" ]; then
-  INVALID_AUTH_RESPONSE=$(curl -s -X GET "${SSO_SERVER_URL}/oauth-authorize?client_id=invalid-client&redirect_uri=${TEST_REDIRECT_URI}&response_type=code")
+  INVALID_AUTH_RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "${SSO_SERVER_URL}/oauth-authorize?client_id=invalid-client&redirect_uri=${TEST_REDIRECT_URI}&response_type=code")
+  HTTP_STATUS=$(echo "$INVALID_AUTH_RESPONSE" | tail -n1)
+  RESPONSE_BODY=$(echo "$INVALID_AUTH_RESPONSE" | sed '$d')
   
-  ERROR=$(echo "$INVALID_AUTH_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
+  ERROR=$(echo "$RESPONSE_BODY" | jq -r '.error // empty' 2>/dev/null || echo "")
   
-  if [ -n "$ERROR" ] && [ "$ERROR" != "null" ]; then
-    log_test "OAuth Authorize - Invalid Client" "PASS" "Properly rejected invalid client: $ERROR"
+  if [ "$HTTP_STATUS" = "401" ] && [ -n "$ERROR" ] && [ "$ERROR" != "null" ]; then
+    log_test "OAuth Authorize - Invalid Client" "PASS" "Properly rejected invalid client (HTTP $HTTP_STATUS): $ERROR"
+  elif [ "$HTTP_STATUS" = "500" ]; then
+    log_test "OAuth Authorize - Invalid Client" "FAIL" "Server error (500) when rejecting invalid client: $RESPONSE_BODY"
   else
-    log_test "OAuth Authorize - Invalid Client" "FAIL" "Should reject invalid client"
+    log_test "OAuth Authorize - Invalid Client" "FAIL" "Should reject invalid client (got HTTP $HTTP_STATUS): $RESPONSE_BODY"
   fi
 else
   log_test "OAuth Authorize - Invalid Client" "SKIP" "Test application not created"
@@ -207,27 +215,61 @@ if [ -n "$TEST_CLIENT_ID" ] && [ -n "$TEST_USER_ID" ]; then
   USER_TOKEN=$(echo "$USER_AUTH" | jq -r '.access_token // empty' 2>/dev/null || echo "")
   
   if [ -n "$USER_TOKEN" ] && [ "$USER_TOKEN" != "null" ]; then
-    # Request authorization code
-    AUTH_CODE_RESPONSE=$(curl -s -X GET "${SSO_SERVER_URL}/oauth-authorize?client_id=${TEST_CLIENT_ID}&redirect_uri=${TEST_REDIRECT_URI}&response_type=code&state=test-state-123" \
+    # Request authorization code - capture both status code and response body
+    AUTH_CODE_RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "${SSO_SERVER_URL}/oauth-authorize?client_id=${TEST_CLIENT_ID}&redirect_uri=${TEST_REDIRECT_URI}&response_type=code&state=test-state-123" \
       -H "Authorization: Bearer ${USER_TOKEN}")
     
-    REDIRECT_URL=$(echo "$AUTH_CODE_RESPONSE" | jq -r '.redirect_url // empty' 2>/dev/null || echo "")
-    ERROR=$(echo "$AUTH_CODE_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
+    HTTP_STATUS=$(echo "$AUTH_CODE_RESPONSE" | tail -n1)
+    RESPONSE_BODY=$(echo "$AUTH_CODE_RESPONSE" | sed '$d')
     
-    if [ -n "$REDIRECT_URL" ] && [ "$REDIRECT_URL" != "null" ]; then
-      # Extract code from redirect URL
-      CODE=$(echo "$REDIRECT_URL" | grep -oP 'code=\K[^&]*' || echo "")
-      
-      if [ -n "$CODE" ]; then
-        log_test "OAuth Authorize - Authenticated User" "PASS" "Successfully generated authorization code"
-        AUTHORIZATION_CODE="$CODE"
+    REDIRECT_URL=$(echo "$RESPONSE_BODY" | jq -r '.redirect_url // empty' 2>/dev/null || echo "")
+    ERROR=$(echo "$RESPONSE_BODY" | jq -r '.error // empty' 2>/dev/null || echo "")
+    ERROR_DESC=$(echo "$RESPONSE_BODY" | jq -r '.error_description // empty' 2>/dev/null || echo "")
+    
+    # Check HTTP status code first
+    if [ "$HTTP_STATUS" = "500" ]; then
+      log_test "OAuth Authorize - Authenticated User" "FAIL" "Server error (500): $ERROR - $ERROR_DESC. Response: $RESPONSE_BODY"
+    elif [ "$HTTP_STATUS" = "302" ] || [ "$HTTP_STATUS" = "200" ]; then
+      # Success case - check for redirect URL or authorization code
+      if [ -n "$REDIRECT_URL" ] && [ "$REDIRECT_URL" != "null" ]; then
+        # Extract code from redirect URL
+        CODE=$(echo "$REDIRECT_URL" | grep -oP 'code=\K[^&]*' || echo "")
+        
+        if [ -n "$CODE" ]; then
+          log_test "OAuth Authorize - Authenticated User" "PASS" "Successfully generated authorization code (HTTP $HTTP_STATUS)"
+          AUTHORIZATION_CODE="$CODE"
+        else
+          log_test "OAuth Authorize - Authenticated User" "FAIL" "Authorization code not found in redirect URL: $REDIRECT_URL"
+        fi
+      elif [ "$HTTP_STATUS" = "302" ]; then
+        # 302 redirect without JSON - extract code from Location header
+        LOCATION=$(curl -s -I -X GET "${SSO_SERVER_URL}/oauth-authorize?client_id=${TEST_CLIENT_ID}&redirect_uri=${TEST_REDIRECT_URI}&response_type=code&state=test-state-123" \
+          -H "Authorization: Bearer ${USER_TOKEN}" | grep -i "location:" | cut -d' ' -f2- | tr -d '\r\n')
+        CODE=$(echo "$LOCATION" | grep -oP 'code=\K[^&]*' || echo "")
+        if [ -n "$CODE" ]; then
+          log_test "OAuth Authorize - Authenticated User" "PASS" "Successfully generated authorization code via redirect (HTTP $HTTP_STATUS)"
+          AUTHORIZATION_CODE="$CODE"
+        else
+          log_test "OAuth Authorize - Authenticated User" "FAIL" "Could not extract authorization code from redirect: $LOCATION"
+        fi
       else
-        log_test "OAuth Authorize - Authenticated User" "FAIL" "Authorization code not found in redirect URL"
+        log_test "OAuth Authorize - Authenticated User" "FAIL" "Unexpected response format (HTTP $HTTP_STATUS): $RESPONSE_BODY"
       fi
+    elif [ "$HTTP_STATUS" = "403" ]; then
+      # Access denied - user doesn't have app_access privilege
+      log_test "OAuth Authorize - Authenticated User" "SKIP" "Access denied (403) - user may need app_access privilege: $ERROR - $ERROR_DESC"
+    elif [ "$HTTP_STATUS" = "401" ]; then
+      # Invalid token
+      log_test "OAuth Authorize - Authenticated User" "FAIL" "Authentication failed (401): $ERROR - $ERROR_DESC"
     elif [ -n "$ERROR" ]; then
-      log_test "OAuth Authorize - Authenticated User" "SKIP" "Authorization failed (may need app_access privilege): $ERROR"
+      # Other error cases
+      if [ "$ERROR" = "access_denied" ]; then
+        log_test "OAuth Authorize - Authenticated User" "SKIP" "Access denied - user may need app_access privilege: $ERROR_DESC"
+      else
+        log_test "OAuth Authorize - Authenticated User" "FAIL" "Authorization failed (HTTP $HTTP_STATUS): $ERROR - $ERROR_DESC"
+      fi
     else
-      log_test "OAuth Authorize - Authenticated User" "FAIL" "Unexpected response: $AUTH_CODE_RESPONSE"
+      log_test "OAuth Authorize - Authenticated User" "FAIL" "Unexpected response (HTTP $HTTP_STATUS): $RESPONSE_BODY"
     fi
   else
     log_test "OAuth Authorize - Authenticated User" "SKIP" "Failed to authenticate test user"
