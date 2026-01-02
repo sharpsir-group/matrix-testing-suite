@@ -1,4 +1,4 @@
-# SSO Console Final Test Results - Fri Jan  2 08:21:49 AM UTC 2026
+# SSO Console Final Test Results - Fri Jan  2 10:11:07 PM UTC 2026
 
 ## Test Coverage
 
@@ -6,13 +6,13 @@ This test suite covers all SSO Console functionality:
 - User Management (via admin-users edge function)
 - Application Management (via REST API)
 - Group Management (via REST API)
-- Privilege Management (via REST API)
-- Privilege Templates (via REST API)
+- Permission Management (via REST API)
+- Permission Templates (via REST API)
 - Settings Access
 
 ## List Users
 
-Retrieved 20 users via admin-users endpoint
+Retrieved 50 users via admin-users endpoint
 
 ✅ PASS: List Users
 
@@ -24,7 +24,7 @@ Retrieved user: manager.test@sharpsir.group
 
 ## Create User
 
-Created user: sso.console.test.1767342111@sharpsir.group (ID: c91d7158-7415-492a-a832-1a808d8084e5)
+Created user: sso.console.test.1767391869@sharpsir.group (ID: 04367fee-87eb-4154-bee1-697ca77f3f74)
 
 ✅ PASS: Create User
 
@@ -42,7 +42,7 @@ Retrieved 0 applications
 
 ## Create Application
 
-Created application: dNgvBzz84gxSmcH3FFbp1FZm_EwurUz6
+Created application: ~ky~dQ7SRVyXZvrg_QMfSIT.~kr31PS.
 
 ✅ PASS: Create Application
 
@@ -54,7 +54,7 @@ Retrieved 0 groups
 
 ## Create Group
 
-Created group: eae75b74-ec58-48b8-b013-d8e8b27df79c
+Created group: 79bca102-b5ad-4a9e-bfc3-8886f6f9ed9e
 
 ✅ PASS: Create Group
 
@@ -64,41 +64,41 @@ User added to group successfully
 
 ✅ PASS: Add User to Group
 
-## List User Privileges
+## List User Permissions
 
-Retrieved 3 privileges
+Retrieved 1 permissions
 
-✅ PASS: List User Privileges
+✅ PASS: List User Permissions
 
-## Grant Privilege to User
+## Grant Permission to User
 
-Privilege granted successfully
+Permission granted successfully
 
-✅ PASS: Grant Privilege to User
+✅ PASS: Grant Permission to User
 
-## Revoke Privilege from User
+## Revoke Permission from User
 
-Privilege revoked successfully
+Permission revoked successfully
 
-✅ PASS: Revoke Privilege from User
+✅ PASS: Revoke Permission from User
 
-## Grant Privilege to Group
+## Grant Permission to Group
 
-Privilege granted to group successfully
+Permission granted to group successfully
 
-✅ PASS: Grant Privilege to Group
+✅ PASS: Grant Permission to Group
 
-## List Privilege Templates
+## List Permission Templates
 
 Retrieved 0 templates
 
-✅ PASS: List Privilege Templates
+✅ PASS: List Permission Templates
 
-## Create Privilege Template
+## Create Permission Template
 
-Created template: 70c7fdfa-dc53-45e2-ab6d-6ab8d0200dea
+Created template: a0c6faf3-813d-49b3-8622-bdace9239e9e
 
-✅ PASS: Create Privilege Template
+✅ PASS: Create Permission Template
 
 ## Non-Admin Access Denied
 
@@ -122,6 +122,6 @@ Skipped: 0
 ## Notes
 
 - All operations use admin token via edge functions (emulating UI)
-- User management operations use admin-users edge function which requires OAuth JWT with admin privilege
+- User management operations use admin-users edge function which requires OAuth JWT with admin permission
 - Read operations work with regular user tokens
 

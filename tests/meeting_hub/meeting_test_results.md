@@ -1,21 +1,21 @@
-# Meeting Hub Functional Test Results - Thu Jan  1 09:40:26 PM UTC 2026
+# Meeting Hub Functional Test Results - Fri Jan  2 10:12:11 PM UTC 2026
 
 ## BuyerShowing Meeting Creation (Broker1)
 
-Created meeting ID: 3dc8a3c1-ad65-4d1f-8736-561a15193281
+Created meeting ID: 750e6b2f-c4e5-41e4-b0a1-191ab6d11bbc
 
 ✅ PASS: BuyerShowing Meeting Creation (Broker1)
 
 ## SellerMeeting Meeting Creation (Broker1)
 
-Created meeting ID: da17b4d4-1dff-4365-a366-0d5e5e6bb409
+Created meeting ID: af96c957-4cc0-4559-88d7-ff233b644c96
 
 ✅ PASS: SellerMeeting Meeting Creation (Broker1)
 
-Broker1 sees 10 meetings
+Broker1 sees 55 meetings
 ## Broker1 Meeting Access
 
-Broker1 can see 10 own meetings
+Broker1 can see 55 own meetings
 
 ✅ PASS: Broker1 Meeting Access
 
@@ -27,11 +27,11 @@ Broker2 cannot see Broker1's meetings
 
 ✅ PASS: Broker Meeting Isolation (Broker2)
 
-Manager sees 16 meetings
-Broker1 meetings visible to Manager: 10
+Manager sees 80 meetings
+Broker1 meetings visible to Manager: 55
 ## Manager Full Meeting Access
 
-Manager can see all meetings (16 total, 10 from Broker1)
+Manager can see all meetings (80 total, 55 from Broker1)
 
 ✅ PASS: Manager Full Meeting Access
 

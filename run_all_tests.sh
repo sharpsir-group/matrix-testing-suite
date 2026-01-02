@@ -82,11 +82,12 @@ fi
 # Test Suites
 SUITES=(
   "SSO Console:tests/sso_console/test_sso_console.sh"
-  "User Management Privilege:tests/sso_console/test_user_management_privilege.sh"
+  "User Management Permission:tests/sso_console/test_user_management_permission.sh"
   "OAuth Flow:tests/sso_console/test_oauth_flow.sh"
   "Applications Comprehensive:tests/sso_console/test_applications_comprehensive.sh"
   "Groups Comprehensive:tests/sso_console/test_groups_comprehensive.sh"
-  "Privileges Comprehensive:tests/sso_console/test_privileges_comprehensive.sh"
+  "Permissions Comprehensive:tests/sso_console/test_permissions_comprehensive.sh"
+  "MemberType Assignment:tests/sso_console/test_membertype_assignment.sh"
   "SAML & Dashboard:tests/sso_console/test_saml_dashboard.sh"
   "Client Connect:tests/client_connect/test_client_connect.sh"
   "Register Client:tests/client_connect/test_register_client.sh"
@@ -94,6 +95,7 @@ SUITES=(
   "New Meeting:tests/meeting_hub/test_new_meeting.sh"
   "Workflows:tests/workflows/test_workflows.sh"
   "Data Isolation:tests/isolation/test_isolation.sh"
+  "Layer 2 App Permissions:tests/app_permissions/test_layer2_permissions.sh"
 )
 
 SUITE_COUNT=0

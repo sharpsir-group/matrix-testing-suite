@@ -1,4 +1,4 @@
-# SAML Configuration and Dashboard Tests - Fri Jan  2 08:02:48 AM UTC 2026
+# SAML Configuration and Dashboard Tests - Fri Jan  2 10:12:06 PM UTC 2026
 
 ## Test Coverage
 
@@ -11,40 +11,40 @@ This test suite covers:
 
 ### SAML Status
 
-SAML status endpoint accessible
+SAML status endpoint may not be configured: {"error":"forbidden","error_description":"Admin privileges required"}
 
-✅ PASS: SAML Status
+⏭️  SKIP: SAML Status
 
 ### SAML Metadata
 
-SAML metadata endpoint accessible
+SAML metadata endpoint may not be configured: {"error":"forbidden","error_description":"Admin privileges required"}
 
-✅ PASS: SAML Metadata
+⏭️  SKIP: SAML Metadata
 
 ### SAML Test Connection
 
-SAML test endpoint accessible
+SAML test endpoint may not be configured: {"error":"forbidden","error_description":"Admin privileges required"}
 
-✅ PASS: SAML Test Connection
+⏭️  SKIP: SAML Test Connection
 
 ### Dashboard Statistics
 
-Dashboard statistics endpoint accessible
+Dashboard stats endpoint may not exist: {"error":"forbidden","error_description":"Admin privileges required"}
 
-✅ PASS: Dashboard Statistics
+⏭️  SKIP: Dashboard Statistics
 
 ### Dashboard Activity
 
-Retrieved 10 activity entries
+Dashboard activity endpoint may not exist: {"error":"forbidden","error_description":"Admin privileges required"}
 
-✅ PASS: Dashboard Activity
+⏭️  SKIP: Dashboard Activity
 
 
 ## Test Summary
 
 | Metric | Count |
 |--------|-------|
-| Passed | 5 |
+| Passed | 0 |
 | Failed | 0 |
-| Skipped | 0 |
+| Skipped | 5 |
 

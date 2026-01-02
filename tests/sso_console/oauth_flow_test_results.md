@@ -1,4 +1,4 @@
-# OAuth 2.0 Flow Test Results - Fri Jan  2 08:01:54 AM UTC 2026
+# OAuth 2.0 Flow Test Results - Fri Jan  2 10:11:34 PM UTC 2026
 
 ## Overview
 
@@ -19,19 +19,19 @@ Properly rejected request with missing parameters: invalid_request
 
 ### OAuth Authorize - Invalid Client
 
-Test application not created
+Properly rejected invalid client: invalid_client
 
-⏭️  SKIP: OAuth Authorize - Invalid Client
+✅ PASS: OAuth Authorize - Invalid Client
 
 ### OAuth Authorize - Unauthenticated User
 
-Test application not created
+Should require authentication
 
-⏭️  SKIP: OAuth Authorize - Unauthenticated User
+❌ FAIL: OAuth Authorize - Unauthenticated User
 
 ### OAuth Authorize - Authenticated User
 
-Test application or user not created
+Authorization failed (may need app_access privilege): server_error
 
 ⏭️  SKIP: OAuth Authorize - Authenticated User
 
@@ -55,7 +55,7 @@ Properly rejected invalid token: invalid_token
 
 ### OAuth Token - Invalid Grant
 
-Properly rejected invalid authorization code: invalid_request
+Properly rejected invalid authorization code: invalid_grant
 
 ✅ PASS: OAuth Token - Invalid Grant
 
@@ -76,9 +76,9 @@ OAuth access token not available
 
 | Metric | Count |
 |--------|-------|
-| Passed | 4 |
-| Failed | 0 |
-| Skipped | 6 |
+| Passed | 5 |
+| Failed | 1 |
+| Skipped | 4 |
 
 ## Notes
 

@@ -19,16 +19,16 @@ Run this test suite before:
 - Privilege Templates
 - Security (Access Control)
 
-### User Management Privilege (9 tests)
+### User Management Permission (9 tests)
 - Admin can list users
-- User Manager can list users (with `user_management` privilege)
+- Admin can list users (with `admin` permission)
 - Regular user cannot list users (access denied)
 - Admin can reset user password
 - Admin can update user display name
 - Regular user cannot reset password (security)
 - Password validation (minimum length)
 - Last login data returned
-- User privileges in response
+- User permissions in response
 
 ### OAuth 2.0 Flow (10 tests)
 - OAuth authorize endpoint (missing parameters, invalid client, unauthenticated)
@@ -38,7 +38,7 @@ Run this test suite before:
 - OAuth userinfo with invalid token
 - OAuth token with invalid grant
 - OAuth login page (HTML)
-- Check privileges endpoint
+- Check permissions endpoint
 - Complete OAuth authorization code flow
 
 ### Applications Comprehensive (8 tests)
@@ -62,12 +62,12 @@ Run this test suite before:
 - Sync AD groups
 - Delete group
 
-### Privileges Comprehensive (6 tests)
-- List privileges
-- Grant privilege
-- Revoke privilege
-- List privilege templates
-- Create privilege template
+### Permissions Comprehensive (6 tests)
+- List permissions
+- Grant permission
+- Revoke permission
+- List permission templates
+- Create permission template
 - Get audit log
 
 ### SAML & Dashboard (5 tests)

@@ -1,32 +1,32 @@
-# Register Client Test Results - Thu Jan  1 10:00:50 PM UTC 2026
+# Register Client Test Results - Fri Jan  2 10:12:08 PM UTC 2026
 
 ## Authentication (Broker1)
 
-Authenticated as broker1.test@sharpsir.group (User ID: 87a54f77-5566-4c71-b2ac-3867a06692a2, Member ID: bea1a885-bdf2-430e-8fd1-a6127888b2fd)
+Authenticated as broker1.test@sharpsir.group (User ID: 4c629bfc-6c2d-49c1-babb-a83bc79599d9, Member ID: 3c3396ad-108a-4b2d-87be-7a9b8016657e)
 
 ✅ PASS: Authentication (Broker1)
 
 ## Register Client - Complete Form
 
-Created client ID: ba62e5b5-a83d-4ef3-85f0-3609ae64bdbf with all fields populated
+Created client ID: 453c8705-e6a4-4e78-b837-561dafe9bc18 with all fields populated
 
 ✅ PASS: Register Client - Complete Form
 
 ## Register Client - Minimal Fields
 
-Created client ID: d35ef3c5-558d-45aa-b562-147c28283edc with only required fields
+Created client ID: b33b1653-956c-4343-b6a8-0c15d60b5f31 with only required fields
 
 ✅ PASS: Register Client - Minimal Fields
 
 ## Register Client - Seller Intent
 
-Created seller client ID: 38db8096-00f4-45bb-8629-dd4e3e138df1
+Created seller client ID: 333ea89a-899d-4d45-8ee1-b2dec65bc6a8
 
 ✅ PASS: Register Client - Seller Intent
 
 ## Register Client - Multiple Intents
 
-Created client ID: bab4ec0a-01c9-4026-ba43-148d81f6c87d with intents: buy, rent
+Created client ID: d825e38d-f546-412d-b5ed-d96b992f5189 with intents: buy, rent
 
 ✅ PASS: Register Client - Multiple Intents
 
@@ -38,19 +38,19 @@ Validation error correctly returned: 23502 - null value in column "last_name" of
 
 ## Register Client - Data Isolation
 
-Client correctly owned by broker1 (Member ID: bea1a885-bdf2-430e-8fd1-a6127888b2fd)
+Client correctly owned by broker1 (Member ID: 3c3396ad-108a-4b2d-87be-7a9b8016657e)
 
 ✅ PASS: Register Client - Data Isolation
 
 ## Register Client - Lead Origin (other)
 
-Created client ID: fb68f30f-64b4-4b41-9edb-dfe3517eb533 with lead_origin: other
+Created client ID: 863a11da-86eb-46de-91ca-ecb4096cfafe with lead_origin: other
 
 ✅ PASS: Register Client - Lead Origin (other)
 
 ## Register Client - Budget Range
 
-Created client ID: 4018a6a8-594c-4b4c-b2d6-9c504e7d8c61 with budget €500K-€1M
+Created client ID: f777bd1e-4e12-483a-80a2-a2572c688e4a with budget €500K-€1M
 
 ✅ PASS: Register Client - Budget Range
 

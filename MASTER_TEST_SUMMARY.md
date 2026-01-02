@@ -10,20 +10,20 @@ Comprehensive test suite to run **before showing system to users** and **before 
 - ✅ User Management (Create, Read, Update, Delete)
 - ✅ Application Management (CRUD)
 - ✅ Group Management (CRUD)
-- ✅ Privilege Management (Grant, Revoke)
-- ✅ Privilege Templates
+- ✅ Permission Management (Grant, Revoke)
+- ✅ Permission Templates
 - ✅ Security (Access Control)
 
 ### User Management Privilege (9 tests)
 - ✅ Admin can list users
-- ✅ User Manager can list users (with `user_management` privilege)
+- ✅ Admin can list users (with `admin` permission)
 - ✅ Regular user cannot list users (access denied)
 - ✅ Admin can reset user password
 - ✅ Admin can update user display name
 - ✅ Regular user cannot reset password (security)
 - ✅ Password validation (minimum length)
 - ✅ Last login data returned
-- ✅ User privileges in response
+- ✅ User permissions in response
 
 ### OAuth 2.0 Flow (10 tests)
 - ✅ OAuth authorize endpoint validation
@@ -32,7 +32,7 @@ Comprehensive test suite to run **before showing system to users** and **before 
 - ✅ OAuth userinfo endpoint
 - ✅ OAuth token validation
 - ✅ OAuth login page
-- ✅ Check privileges endpoint
+- ✅ Check permissions endpoint
 - ✅ Complete OAuth flow
 
 ### Applications Comprehensive (8 tests)
@@ -56,12 +56,12 @@ Comprehensive test suite to run **before showing system to users** and **before 
 - ✅ Sync AD groups
 - ✅ Delete group
 
-### Privileges Comprehensive (6 tests)
-- ✅ List privileges
-- ✅ Grant privilege
-- ✅ Revoke privilege
-- ✅ List privilege templates
-- ✅ Create privilege template
+### Permissions Comprehensive (6 tests)
+- ✅ List permissions
+- ✅ Grant permission
+- ✅ Revoke permission
+- ✅ List permission templates
+- ✅ Create permission template
 - ✅ Get audit log
 
 ### SAML & Dashboard (5 tests)
@@ -142,11 +142,11 @@ cd /home/bitnami/matrix-testing-suite
 - `run_all_tests.sh` - Master test runner
 - `setup_test_environment.sh` - Environment setup
 - `tests/sso_console/test_sso_console.sh` - SSO Console tests
-- `tests/sso_console/test_user_management_privilege.sh` - User Management Privilege tests
+- `tests/sso_console/test_user_management_permission.sh` - User Management Permission tests
 - `tests/sso_console/test_oauth_flow.sh` - OAuth 2.0 Flow tests
 - `tests/sso_console/test_applications_comprehensive.sh` - Applications comprehensive tests
 - `tests/sso_console/test_groups_comprehensive.sh` - Groups comprehensive tests
-- `tests/sso_console/test_privileges_comprehensive.sh` - Privileges comprehensive tests
+- `tests/sso_console/test_permissions_comprehensive.sh` - Permissions comprehensive tests
 - `tests/sso_console/test_saml_dashboard.sh` - SAML & Dashboard tests
 - `tests/client_connect/` - Client Connect tests
 - `tests/meeting_hub/` - Meeting Hub tests

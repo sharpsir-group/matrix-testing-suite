@@ -13,7 +13,7 @@ This document outlines the comprehensive test coverage for all SSO features.
 - Privilege Templates (List, Create)
 - Security (Access Control)
 
-### 2. User Management Privilege Tests (`test_user_management_privilege.sh`)
+### 2. User Management Permission Tests (`test_user_management_permission.sh`)
 **9 tests** validating the `user_management` privilege:
 - Admin can list users
 - User Manager can list users (with `user_management` privilege)
@@ -90,7 +90,7 @@ This document outlines the comprehensive test coverage for all SSO features.
 - `DELETE /admin-groups/:id/members/:userId` - Remove member from group
 - `GET /admin-groups/sync-ad` - Sync AD groups
 
-### 6. Privileges Comprehensive Tests (`test_privileges_comprehensive.sh`)
+### 6. Permissions Comprehensive Tests (`test_permissions_comprehensive.sh`)
 **6 tests** covering all privilege management features:
 - List privileges
 - Grant privilege
@@ -133,11 +133,11 @@ cd /home/bitnami/matrix-testing-suite
 ### Run Individual Test Suites
 ```bash
 ./tests/sso_console/test_sso_console.sh
-./tests/sso_console/test_user_management_privilege.sh
+./tests/sso_console/test_user_management_permission.sh
 ./tests/sso_console/test_oauth_flow.sh
 ./tests/sso_console/test_applications_comprehensive.sh
 ./tests/sso_console/test_groups_comprehensive.sh
-./tests/sso_console/test_privileges_comprehensive.sh
+./tests/sso_console/test_permissions_comprehensive.sh
 ./tests/sso_console/test_saml_dashboard.sh
 ```
 
@@ -179,4 +179,5 @@ Test results are saved to:
 - Individual test results: `tests/sso_console/*_test_results.md`
 - Master test results: `results/latest/test_results.md`
 - Test logs: `results/latest/test_log.txt`
+
 
