@@ -103,12 +103,14 @@ CREATE_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-apps" \
     "description": "Test application for comprehensive tests"
   }')
 
+CREATED_APP_ID=$(echo "$CREATE_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
 CREATED_CLIENT_ID=$(echo "$CREATE_RESPONSE" | jq -r '.client_id // empty' 2>/dev/null || echo "")
 CREATED_CLIENT_SECRET=$(echo "$CREATE_RESPONSE" | jq -r '.client_secret // empty' 2>/dev/null || echo "")
 ERROR=$(echo "$CREATE_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
 
-if [ -n "$CREATED_CLIENT_ID" ] && [ "$CREATED_CLIENT_ID" != "null" ] && [ -z "$ERROR" ]; then
-  log_test "Create Application" "PASS" "Created application: $CREATED_CLIENT_ID"
+if [ -n "$CREATED_APP_ID" ] && [ "$CREATED_APP_ID" != "null" ] && [ -z "$ERROR" ]; then
+  log_test "Create Application" "PASS" "Created application: $CREATED_CLIENT_ID (ID: $CREATED_APP_ID)"
+  TEST_APP_ID="$CREATED_APP_ID"
   TEST_APP_CLIENT_ID="$CREATED_CLIENT_ID"
 else
   log_test "Create Application" "FAIL" "Failed: $CREATE_RESPONSE"
@@ -116,8 +118,8 @@ fi
 
 # Test 3: Get Single Application
 echo "Test 3: Get Single Application..."
-if [ -n "$TEST_APP_CLIENT_ID" ] && [ "$TEST_APP_CLIENT_ID" != "null" ]; then
-  GET_RESPONSE=$(curl -s -X GET "${SSO_SERVER_URL}/admin-apps/${TEST_APP_CLIENT_ID}" \
+if [ -n "$TEST_APP_ID" ] && [ "$TEST_APP_ID" != "null" ]; then
+  GET_RESPONSE=$(curl -s -X GET "${SSO_SERVER_URL}/admin-apps/${TEST_APP_ID}" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}")
   
   APP_NAME=$(echo "$GET_RESPONSE" | jq -r '.name // empty' 2>/dev/null || echo "")
@@ -134,8 +136,8 @@ fi
 
 # Test 4: Update Application
 echo "Test 4: Update Application..."
-if [ -n "$TEST_APP_CLIENT_ID" ] && [ "$TEST_APP_CLIENT_ID" != "null" ]; then
-  UPDATE_RESPONSE=$(curl -s -X PUT "${SSO_SERVER_URL}/admin-apps/${TEST_APP_CLIENT_ID}" \
+if [ -n "$TEST_APP_ID" ] && [ "$TEST_APP_ID" != "null" ]; then
+  UPDATE_RESPONSE=$(curl -s -X PUT "${SSO_SERVER_URL}/admin-apps/${TEST_APP_ID}" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
     -d '{
@@ -157,8 +159,8 @@ fi
 
 # Test 5: Regenerate Client Secret
 echo "Test 5: Regenerate Client Secret..."
-if [ -n "$TEST_APP_CLIENT_ID" ] && [ "$TEST_APP_CLIENT_ID" != "null" ]; then
-  REGEN_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-apps/${TEST_APP_CLIENT_ID}/regenerate-secret" \
+if [ -n "$TEST_APP_ID" ] && [ "$TEST_APP_ID" != "null" ]; then
+  REGEN_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-apps/${TEST_APP_ID}/regenerate-secret" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json")
   
@@ -178,8 +180,8 @@ fi
 
 # Test 6: Get App Groups
 echo "Test 6: Get App Groups..."
-if [ -n "$TEST_APP_CLIENT_ID" ]; then
-  GROUPS_RESPONSE=$(curl -s -X GET "${SSO_SERVER_URL}/admin-apps/${TEST_APP_CLIENT_ID}/groups" \
+if [ -n "$TEST_APP_ID" ]; then
+  GROUPS_RESPONSE=$(curl -s -X GET "${SSO_SERVER_URL}/admin-apps/${TEST_APP_ID}/groups" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}")
   
   GROUPS_COUNT=$(echo "$GROUPS_RESPONSE" | jq 'if type=="array" then length else if .groups then (.groups | length) else 0 end end' 2>/dev/null || echo "0")
@@ -214,15 +216,15 @@ fi
 
 # Test 8: Delete Application
 echo "Test 8: Delete Application..."
-if [ -n "$TEST_APP_CLIENT_ID" ] && [ "$TEST_APP_CLIENT_ID" != "null" ]; then
-  DELETE_RESPONSE=$(curl -s -X DELETE "${SSO_SERVER_URL}/admin-apps/${TEST_APP_CLIENT_ID}" \
+if [ -n "$TEST_APP_ID" ] && [ "$TEST_APP_ID" != "null" ]; then
+  DELETE_RESPONSE=$(curl -s -X DELETE "${SSO_SERVER_URL}/admin-apps/${TEST_APP_ID}" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}")
   
   ERROR=$(echo "$DELETE_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
   SUCCESS=$(echo "$DELETE_RESPONSE" | jq -r '.success // empty' 2>/dev/null || echo "")
   
   # Verify deletion
-  VERIFY_RESPONSE=$(curl -s -X GET "${SSO_SERVER_URL}/admin-apps/${TEST_APP_CLIENT_ID}" \
+  VERIFY_RESPONSE=$(curl -s -X GET "${SSO_SERVER_URL}/admin-apps/${TEST_APP_ID}" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}")
   
   VERIFY_ERROR=$(echo "$VERIFY_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")

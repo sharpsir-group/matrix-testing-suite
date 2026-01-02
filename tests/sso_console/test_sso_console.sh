@@ -325,15 +325,11 @@ fi
 # Test 13: Grant Privilege to Group
 echo "Test 13: Grant Privilege to Group..."
 if [ -n "$GROUP_ID" ] && [ "$GROUP_ID" != "null" ]; then
-  # Note: Group privileges may need to be granted via REST API if admin-privileges doesn't support groups
-  # For now, try via REST API with admin token
-  GROUP_PRIV_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/sso_group_privileges" \
-    -H "apikey: ${ANON_KEY}" \
+  # Use admin-groups endpoint to grant privilege to group
+  GROUP_PRIV_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-groups/${GROUP_ID}/privileges" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
-    -H "Prefer: return=representation" \
     -d '{
-      "group_id": "'${GROUP_ID}'",
       "privilege_type": "app_access",
       "resource": null
     }')

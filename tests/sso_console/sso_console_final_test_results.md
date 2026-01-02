@@ -1,4 +1,4 @@
-# SSO Console Final Test Results - Thu Jan  1 09:40:20 PM UTC 2026
+# SSO Console Final Test Results - Fri Jan  2 08:21:49 AM UTC 2026
 
 ## Test Coverage
 
@@ -12,7 +12,7 @@ This test suite covers all SSO Console functionality:
 
 ## List Users
 
-Retrieved 14 users via admin-users endpoint
+Retrieved 20 users via admin-users endpoint
 
 ✅ PASS: List Users
 
@@ -24,7 +24,7 @@ Retrieved user: manager.test@sharpsir.group
 
 ## Create User
 
-Created user: sso.console.test.1767303621@sharpsir.group (ID: 86d76b68-9fab-46a0-a100-292854a94926)
+Created user: sso.console.test.1767342111@sharpsir.group (ID: c91d7158-7415-492a-a832-1a808d8084e5)
 
 ✅ PASS: Create User
 
@@ -42,7 +42,7 @@ Retrieved 0 applications
 
 ## Create Application
 
-Created application: test-app-1767303623
+Created application: dNgvBzz84gxSmcH3FFbp1FZm_EwurUz6
 
 ✅ PASS: Create Application
 
@@ -54,7 +54,7 @@ Retrieved 0 groups
 
 ## Create Group
 
-Created group: 7efa0dac-c8af-4af1-8d52-8463f34f9bf3
+Created group: eae75b74-ec58-48b8-b013-d8e8b27df79c
 
 ✅ PASS: Create Group
 
@@ -96,7 +96,7 @@ Retrieved 0 templates
 
 ## Create Privilege Template
 
-Created template: df9cc218-cf21-41c6-8572-245669e360c4
+Created template: 70c7fdfa-dc53-45e2-ab6d-6ab8d0200dea
 
 ✅ PASS: Create Privilege Template
 
@@ -121,7 +121,7 @@ Skipped: 0
 
 ## Notes
 
-- Write operations (create/update/delete) require service_role key due to RLS policies
+- All operations use admin token via edge functions (emulating UI)
 - User management operations use admin-users edge function which requires OAuth JWT with admin privilege
 - Read operations work with regular user tokens
 
