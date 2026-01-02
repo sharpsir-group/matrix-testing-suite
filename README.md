@@ -30,6 +30,53 @@ Run this test suite before:
 - Last login data returned
 - User privileges in response
 
+### OAuth 2.0 Flow (10 tests)
+- OAuth authorize endpoint (missing parameters, invalid client, unauthenticated)
+- OAuth authorize with authenticated user (full flow)
+- OAuth token exchange (authorization code)
+- OAuth userinfo endpoint
+- OAuth userinfo with invalid token
+- OAuth token with invalid grant
+- OAuth login page (HTML)
+- Check privileges endpoint
+- Complete OAuth authorization code flow
+
+### Applications Comprehensive (8 tests)
+- List applications
+- Create application
+- Get single application
+- Update application
+- Regenerate client secret
+- Get app groups
+- Application statistics
+- Delete application
+
+### Groups Comprehensive (9 tests)
+- List groups
+- Create group
+- Get single group
+- Update group
+- Get group members
+- Add member to group
+- Remove member from group
+- Sync AD groups
+- Delete group
+
+### Privileges Comprehensive (6 tests)
+- List privileges
+- Grant privilege
+- Revoke privilege
+- List privilege templates
+- Create privilege template
+- Get audit log
+
+### SAML & Dashboard (5 tests)
+- SAML status
+- SAML metadata
+- SAML test connection
+- Dashboard statistics
+- Dashboard activity
+
 ### Client Connect (4 tests)
 - Client Registration
 - Broker Isolation
@@ -61,7 +108,7 @@ Run this test suite before:
 - Tenant-level isolation
 - Role-based access control
 
-**Total: 45+ tests**
+**Total: 73+ tests**
 
 ## 🚀 Quick Start
 

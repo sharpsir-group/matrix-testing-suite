@@ -25,6 +25,52 @@ Comprehensive test suite to run **before showing system to users** and **before 
 - ✅ Last login data returned
 - ✅ User privileges in response
 
+### OAuth 2.0 Flow (10 tests)
+- ✅ OAuth authorize endpoint validation
+- ✅ OAuth authorize with authenticated user
+- ✅ OAuth token exchange
+- ✅ OAuth userinfo endpoint
+- ✅ OAuth token validation
+- ✅ OAuth login page
+- ✅ Check privileges endpoint
+- ✅ Complete OAuth flow
+
+### Applications Comprehensive (8 tests)
+- ✅ List applications
+- ✅ Create application
+- ✅ Get single application
+- ✅ Update application
+- ✅ Regenerate client secret
+- ✅ Get app groups
+- ✅ Application statistics
+- ✅ Delete application
+
+### Groups Comprehensive (9 tests)
+- ✅ List groups
+- ✅ Create group
+- ✅ Get single group
+- ✅ Update group
+- ✅ Get group members
+- ✅ Add member to group
+- ✅ Remove member from group
+- ✅ Sync AD groups
+- ✅ Delete group
+
+### Privileges Comprehensive (6 tests)
+- ✅ List privileges
+- ✅ Grant privilege
+- ✅ Revoke privilege
+- ✅ List privilege templates
+- ✅ Create privilege template
+- ✅ Get audit log
+
+### SAML & Dashboard (5 tests)
+- ✅ SAML status
+- ✅ SAML metadata
+- ✅ SAML test connection
+- ✅ Dashboard statistics
+- ✅ Dashboard activity
+
 ### Client Connect (4 tests)
 - ✅ Client Registration
 - ✅ Broker Isolation
@@ -56,7 +102,7 @@ Comprehensive test suite to run **before showing system to users** and **before 
 - ✅ Tenant-level isolation
 - ✅ Role-based access control
 
-**Total: 45+ tests covering all critical functionality**
+**Total: 73+ tests covering all critical functionality**
 
 ## 🚀 Usage
 
@@ -97,6 +143,11 @@ cd /home/bitnami/matrix-testing-suite
 - `setup_test_environment.sh` - Environment setup
 - `tests/sso_console/test_sso_console.sh` - SSO Console tests
 - `tests/sso_console/test_user_management_privilege.sh` - User Management Privilege tests
+- `tests/sso_console/test_oauth_flow.sh` - OAuth 2.0 Flow tests
+- `tests/sso_console/test_applications_comprehensive.sh` - Applications comprehensive tests
+- `tests/sso_console/test_groups_comprehensive.sh` - Groups comprehensive tests
+- `tests/sso_console/test_privileges_comprehensive.sh` - Privileges comprehensive tests
+- `tests/sso_console/test_saml_dashboard.sh` - SAML & Dashboard tests
 - `tests/client_connect/` - Client Connect tests
 - `tests/meeting_hub/` - Meeting Hub tests
 - `tests/workflows/` - Workflow tests
