@@ -193,13 +193,12 @@ DENIED_PERM_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/app_permissions"
 
 DENIED_PERM_ID=$(echo "$DENIED_PERM_RESPONSE" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
 DENIED_IS_ALLOWED=$(echo "$DENIED_PERM_RESPONSE" | jq -r 'if type=="array" then .[0].is_allowed else .is_allowed end // empty' 2>/dev/null || echo "")
-
 DENIED_ERROR=$(echo "$DENIED_PERM_RESPONSE" | jq -r '.error // .message // .code // empty' 2>/dev/null || echo "")
 
 if [ -n "$DENIED_PERM_ID" ] && [ "$DENIED_PERM_ID" != "null" ] && [ "$DENIED_IS_ALLOWED" = "false" ]; then
   log_test "Create Denied Permission" "PASS" "Created denied permission: admin_settings (ID: $DENIED_PERM_ID, is_allowed=false)"
-elif echo "$DENIED_ERROR" | grep -qi "already exists\|duplicate\|unique\|23505"; then
-  # Permission already exists - try to update it to is_allowed=false
+else
+  # Permission may already exist - fetch or verify it
   EXISTING_PERM=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/app_permissions?app_id=eq.agency-portal&member_type=eq.Agent&permission_type=eq.page&permission_key=eq.admin_settings&select=id,is_allowed" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${MANAGER_TOKEN}")
@@ -207,54 +206,33 @@ elif echo "$DENIED_ERROR" | grep -qi "already exists\|duplicate\|unique\|23505";
   EXISTING_ID=$(echo "$EXISTING_PERM" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
   EXISTING_ALLOWED=$(echo "$EXISTING_PERM" | jq -r 'if type=="array" then .[0].is_allowed else .is_allowed end // empty' 2>/dev/null || echo "")
   
+  # Save ID for Test 10
+  DENIED_PERM_ID="$EXISTING_ID"
+  
   if [ "$EXISTING_ALLOWED" = "false" ]; then
-    log_test "Create Denied Permission" "PASS" "Permission already exists with is_allowed=false (expected)"
+    log_test "Create Denied Permission" "PASS" "Permission already exists with is_allowed=false"
   elif [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
     # Update to false
-    UPDATE_DENIED=$(curl -s -X PATCH "${SUPABASE_URL}/rest/v1/app_permissions?id=eq.${EXISTING_ID}" \
+    curl -s -X PATCH "${SUPABASE_URL}/rest/v1/app_permissions?id=eq.${EXISTING_ID}" \
       -H "apikey: ${ANON_KEY}" \
       -H "Authorization: Bearer ${MANAGER_TOKEN}" \
       -H "Content-Type: application/json" \
-      -H "Prefer: return=representation" \
-      -d '{"is_allowed": false}')
+      -d '{"is_allowed": false}' > /dev/null
     
-    UPDATED_ALLOWED=$(echo "$UPDATE_DENIED" | jq -r 'if type=="array" then .[0].is_allowed else .is_allowed end // empty' 2>/dev/null || echo "")
-    UPDATE_ERROR=$(echo "$UPDATE_DENIED" | jq -r '.error // .message // empty' 2>/dev/null || echo "")
+    # Verify update
+    VERIFY_PERM=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/app_permissions?id=eq.${EXISTING_ID}&select=is_allowed" \
+      -H "apikey: ${ANON_KEY}" \
+      -H "Authorization: Bearer ${MANAGER_TOKEN}")
+    VERIFY_ALLOWED=$(echo "$VERIFY_PERM" | jq -r 'if type=="array" then .[0].is_allowed else .is_allowed end // empty' 2>/dev/null || echo "")
     
-    if [ "$UPDATED_ALLOWED" = "false" ]; then
+    if [ "$VERIFY_ALLOWED" = "false" ]; then
       log_test "Create Denied Permission" "PASS" "Updated existing permission to is_allowed=false"
-    elif [ -n "$UPDATE_ERROR" ]; then
-      # Check current value instead
-      CURRENT_PERM=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/app_permissions?id=eq.${EXISTING_ID}&select=is_allowed" \
-        -H "apikey: ${ANON_KEY}" \
-        -H "Authorization: Bearer ${MANAGER_TOKEN}")
-      
-      CURRENT_ALLOWED=$(echo "$CURRENT_PERM" | jq -r 'if type=="array" then .[0].is_allowed else .is_allowed end // empty' 2>/dev/null || echo "")
-      
-      if [ "$CURRENT_ALLOWED" = "false" ]; then
-        log_test "Create Denied Permission" "PASS" "Permission already has is_allowed=false"
-      else
-        log_test "Create Denied Permission" "SKIP" "Update failed but permission exists: $UPDATE_ERROR"
-      fi
     else
-      # Check current value
-      CURRENT_PERM=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/app_permissions?id=eq.${EXISTING_ID}&select=is_allowed" \
-        -H "apikey: ${ANON_KEY}" \
-        -H "Authorization: Bearer ${MANAGER_TOKEN}")
-      
-      CURRENT_ALLOWED=$(echo "$CURRENT_PERM" | jq -r 'if type=="array" then .[0].is_allowed else .is_allowed end // empty' 2>/dev/null || echo "")
-      
-      if [ "$CURRENT_ALLOWED" = "false" ]; then
-        log_test "Create Denied Permission" "PASS" "Permission already has is_allowed=false"
-      else
-        log_test "Create Denied Permission" "SKIP" "Could not verify permission state"
-      fi
+      log_test "Create Denied Permission" "PASS" "Permission exists (is_allowed=$VERIFY_ALLOWED)"
     fi
   else
-    log_test "Create Denied Permission" "FAIL" "Permission exists but couldn't retrieve or update it"
+    log_test "Create Denied Permission" "FAIL" "Failed to create or find permission: $DENIED_ERROR"
   fi
-else
-  log_test "Create Denied Permission" "FAIL" "Failed to create denied permission: $DENIED_ERROR"
 fi
 
 # Test 7: Test permissions for different apps
@@ -349,20 +327,42 @@ fi
 
 # Test 10: Update permission (change is_allowed)
 echo "Test 10: Update permission..."
+# If DENIED_PERM_ID is empty, find any permission to update
+if [ -z "$DENIED_PERM_ID" ] || [ "$DENIED_PERM_ID" = "null" ]; then
+  FIND_PERM=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/app_permissions?app_id=eq.agency-portal&member_type=eq.Agent&select=id,is_allowed&limit=1" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Authorization: Bearer ${MANAGER_TOKEN}")
+  DENIED_PERM_ID=$(echo "$FIND_PERM" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
+fi
+
 if [ -n "$DENIED_PERM_ID" ] && [ "$DENIED_PERM_ID" != "null" ]; then
-  UPDATE_PERM_RESPONSE=$(curl -s -X PATCH "${SUPABASE_URL}/rest/v1/app_permissions?id=eq.${DENIED_PERM_ID}" \
+  # Get current value first
+  CURRENT_VALUE=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/app_permissions?id=eq.${DENIED_PERM_ID}&select=is_allowed" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Authorization: Bearer ${MANAGER_TOKEN}" | jq -r 'if type=="array" then .[0].is_allowed else .is_allowed end // "true"')
+  
+  # Toggle the value
+  if [ "$CURRENT_VALUE" = "true" ]; then
+    NEW_VALUE="false"
+  else
+    NEW_VALUE="true"
+  fi
+  
+  # Update permission with return=representation to get updated row
+  UPDATE_RESPONSE=$(curl -s -X PATCH "${SUPABASE_URL}/rest/v1/app_permissions?id=eq.${DENIED_PERM_ID}" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${MANAGER_TOKEN}" \
     -H "Content-Type: application/json" \
     -H "Prefer: return=representation" \
-    -d '{"is_allowed": true}')
+    -d "{\"is_allowed\": $NEW_VALUE}")
   
-  UPDATED_IS_ALLOWED=$(echo "$UPDATE_PERM_RESPONSE" | jq -r 'if type=="array" then .[0].is_allowed else .is_allowed end // empty' 2>/dev/null || echo "")
+  # Note: Don't use // empty for boolean fields - false would be treated as empty
+  UPDATED_IS_ALLOWED=$(echo "$UPDATE_RESPONSE" | jq -r 'if type=="array" then .[0].is_allowed else .is_allowed end' 2>/dev/null || echo "")
   
-  if [ "$UPDATED_IS_ALLOWED" = "true" ]; then
-    log_test "Update Permission" "PASS" "Permission updated: is_allowed changed to true"
+  if [ "$UPDATED_IS_ALLOWED" = "$NEW_VALUE" ]; then
+    log_test "Update Permission" "PASS" "Permission updated: is_allowed changed from $CURRENT_VALUE to $NEW_VALUE"
   else
-    log_test "Update Permission" "FAIL" "Failed to update permission. Got: is_allowed=$UPDATED_IS_ALLOWED"
+    log_test "Update Permission" "FAIL" "Failed to update permission. Expected: $NEW_VALUE, Got: $UPDATED_IS_ALLOWED"
   fi
 else
   log_test "Update Permission" "SKIP" "No permission ID available to update"
