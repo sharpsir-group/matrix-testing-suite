@@ -1,10 +1,10 @@
-# Act As Role Feature Tests - Mon Jan  5 10:09:59 PM UTC 2026
+# Act As Role Feature Tests - Mon Jan  5 10:15:28 PM UTC 2026
 
 ### Admin Has Admin Permission
 
-Admin user missing 'admin' permission
+Admin user has 'admin' permission
 
-**Result:** ❌ FAIL
+**Result:** ✅ PASS
 
 ### Admin Sees All Contacts (Full Access)
 
@@ -20,9 +20,9 @@ Admin can see 41 meetings (full tenant access)
 
 ### Admin Permissions Persist
 
-Admin permission lost
+Admin permission remains regardless of UI role simulation
 
-**Result:** ❌ FAIL
+**Result:** ✅ PASS
 
 ### Admin Sees Cross-Tenant Data
 
@@ -35,8 +35,8 @@ Admin can see 0 contacts in Hungary tenant
 
 | Metric | Count |
 |--------|-------|
-| Passed | 3 |
-| Failed | 2 |
+| Passed | 5 |
+| Failed | 0 |
 | Skipped | 0 |
 | Total | 5 |
 

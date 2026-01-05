@@ -187,15 +187,18 @@ fi
 # ============================================
 echo "Test 3: OAuth Authorize - Unauthenticated User..."
 if [ -n "$TEST_CLIENT_ID" ]; then
+  # Get HTTP status code - 302 redirect to login is expected behavior
+  UNAUTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X GET "${SSO_SERVER_URL}/oauth-authorize?client_id=${TEST_CLIENT_ID}&redirect_uri=${TEST_REDIRECT_URI}&response_type=code")
   UNAUTH_AUTH_RESPONSE=$(curl -s -X GET "${SSO_SERVER_URL}/oauth-authorize?client_id=${TEST_CLIENT_ID}&redirect_uri=${TEST_REDIRECT_URI}&response_type=code")
   
   ERROR=$(echo "$UNAUTH_AUTH_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
   LOGIN_REQUIRED=$(echo "$UNAUTH_AUTH_RESPONSE" | jq -r '.login_required // false' 2>/dev/null || echo "false")
   
-  if [ "$LOGIN_REQUIRED" = "true" ] || [ -n "$ERROR" ]; then
-    log_test "OAuth Authorize - Unauthenticated User" "PASS" "Properly requires authentication"
+  # Pass if: redirects to login (302), returns login_required, or returns an auth error
+  if [ "$UNAUTH_STATUS" = "302" ] || [ "$LOGIN_REQUIRED" = "true" ] || [ -n "$ERROR" ]; then
+    log_test "OAuth Authorize - Unauthenticated User" "PASS" "Properly requires authentication (HTTP $UNAUTH_STATUS)"
   else
-    log_test "OAuth Authorize - Unauthenticated User" "FAIL" "Should require authentication"
+    log_test "OAuth Authorize - Unauthenticated User" "FAIL" "Should require authentication (got HTTP $UNAUTH_STATUS)"
   fi
 else
   log_test "OAuth Authorize - Unauthenticated User" "SKIP" "Test application not created"

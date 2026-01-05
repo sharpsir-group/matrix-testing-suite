@@ -58,22 +58,10 @@ authenticate_user() {
   local email="$1"
   local password="$2"
   
-  AUTH_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
+  curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
     -H "apikey: ${ANON_KEY}" \
     -H "Content-Type: application/json" \
-    -d "{\"email\":\"${email}\",\"password\":\"${password}\"}")
-  
-  echo "$AUTH_RESPONSE" | jq -r '.access_token // empty' 2>/dev/null || echo ""
-}
-
-get_user_id() {
-  local email="$1"
-  AUTH_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
-    -H "apikey: ${ANON_KEY}" \
-    -H "Content-Type: application/json" \
-    -d "{\"email\":\"${email}\",\"password\":\"${TEST_PASSWORD}\"}")
-  
-  echo "$AUTH_RESPONSE" | jq -r '.user.id // empty' 2>/dev/null || echo ""
+    -d "{\"email\":\"${email}\",\"password\":\"${password}\"}"
 }
 
 echo "=== Act As Role Feature Tests ==="
@@ -82,8 +70,9 @@ echo ""
 # Authenticate as Admin
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@sharpsir.group}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-admin1234}"
-ADMIN_TOKEN=$(authenticate_user "$ADMIN_EMAIL" "$ADMIN_PASSWORD")
-ADMIN_USER_ID=$(get_user_id "$ADMIN_EMAIL")
+ADMIN_AUTH_RESPONSE=$(authenticate_user "$ADMIN_EMAIL" "$ADMIN_PASSWORD")
+ADMIN_TOKEN=$(echo "$ADMIN_AUTH_RESPONSE" | jq -r '.access_token // empty' 2>/dev/null || echo "")
+ADMIN_USER_ID=$(echo "$ADMIN_AUTH_RESPONSE" | jq -r '.user.id // empty' 2>/dev/null || echo "")
 
 if [ -z "$ADMIN_TOKEN" ] || [ "$ADMIN_TOKEN" = "null" ]; then
   log_test "Setup - Admin Authentication" "FAIL" "Could not authenticate as admin"
@@ -94,14 +83,17 @@ fi
 ADMIN_INFO=$(curl -s -X GET "${SSO_BASE}/admin-users/${ADMIN_USER_ID}" \
   -H "Authorization: Bearer ${ADMIN_TOKEN}")
 
-ADMIN_PERMS=$(echo "$ADMIN_INFO" | jq '.permissions // []' 2>/dev/null || echo "[]")
-HAS_ADMIN_PERM=$(echo "$ADMIN_INFO" | jq '.permissions // [] | map(select(. == "admin")) | length' 2>/dev/null || echo "0")
+# Extract permissions and check for admin
+HAS_ADMIN_PERM=$(echo "$ADMIN_INFO" | jq -r '.permissions // [] | map(select(. == "admin")) | length' 2>/dev/null)
+if [ -z "$HAS_ADMIN_PERM" ] || [ "$HAS_ADMIN_PERM" = "null" ]; then
+  HAS_ADMIN_PERM=0
+fi
 
 # Test 1: Admin has admin permission
 if [ "$HAS_ADMIN_PERM" -gt 0 ]; then
   log_test "Admin Has Admin Permission" "PASS" "Admin user has 'admin' permission"
 else
-  log_test "Admin Has Admin Permission" "FAIL" "Admin user missing 'admin' permission"
+  log_test "Admin Has Admin Permission" "FAIL" "Admin user missing 'admin' permission (found: $HAS_ADMIN_PERM)"
 fi
 
 # Test 2: Admin can see all contacts (even when "acting as broker")
@@ -125,11 +117,14 @@ log_test "Admin Sees All Meetings" "PASS" "Admin can see $ALL_MEETINGS meetings 
 
 # Test 4: Admin permissions persist regardless of "acting as" role
 # The "Act As" feature is UI-only and doesn't affect actual permissions
-ADMIN_PERMS_AFTER=$(echo "$ADMIN_INFO" | jq '.permissions // [] | map(select(. == "admin")) | length' 2>/dev/null || echo "0")
+ADMIN_PERMS_AFTER=$(echo "$ADMIN_INFO" | jq -r '.permissions // [] | map(select(. == "admin")) | length' 2>/dev/null)
+if [ -z "$ADMIN_PERMS_AFTER" ] || [ "$ADMIN_PERMS_AFTER" = "null" ]; then
+  ADMIN_PERMS_AFTER=0
+fi
 if [ "$ADMIN_PERMS_AFTER" -gt 0 ]; then
   log_test "Admin Permissions Persist" "PASS" "Admin permission remains regardless of UI role simulation"
 else
-  log_test "Admin Permissions Persist" "FAIL" "Admin permission lost"
+  log_test "Admin Permissions Persist" "FAIL" "Admin permission lost (found: $ADMIN_PERMS_AFTER)"
 fi
 
 # Test 5: Admin can access cross-tenant data
