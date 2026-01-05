@@ -1,4 +1,4 @@
-# User Permissions & Visibility Tests - Mon Jan  5 08:13:25 PM UTC 2026
+# User Permissions & Visibility Tests - Mon Jan  5 10:05:30 PM UTC 2026
 
 ## Overview
 
@@ -15,13 +15,13 @@ This test suite validates:
 
 ### Create User
 
-Successfully created user test.automation.1767644005@sharpsir.group (ID: bffb65a2-089e-400f-abef-63031e19f82f)
+Successfully created user test.automation.1767650730@sharpsir.group (ID: c7b7b731-5d0b-4c68-94ed-2edccf2a44f8)
 
 **Result:** ✅ PASS
 
 ### Read User Details
 
-Successfully retrieved user details for test.automation.1767644005@sharpsir.group
+Successfully retrieved user details for test.automation.1767650730@sharpsir.group
 
 **Result:** ✅ PASS
 
@@ -39,7 +39,7 @@ Successfully updated display name
 
 ### List All Users
 
-Successfully listed 25 users
+Successfully listed 32 users
 
 **Result:** ✅ PASS
 
@@ -48,7 +48,7 @@ Successfully listed 25 users
 
 ### Grant Permission
 
-Successfully granted 'app_access' permission (ID: 3840875f-af22-48a2-ac4d-c68eb479040a)
+Successfully granted 'app_access' permission (ID: a566d3f6-9e7a-44d3-9745-3975bb4ee973)
 
 **Result:** ✅ PASS
 

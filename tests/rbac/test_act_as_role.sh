@@ -95,7 +95,7 @@ ADMIN_INFO=$(curl -s -X GET "${SSO_BASE}/admin-users/${ADMIN_USER_ID}" \
   -H "Authorization: Bearer ${ADMIN_TOKEN}")
 
 ADMIN_PERMS=$(echo "$ADMIN_INFO" | jq '.permissions // []' 2>/dev/null || echo "[]")
-HAS_ADMIN_PERM=$(echo "$ADMIN_PERMS" | jq 'map(select(. == "admin")) | length' 2>/dev/null || echo "0")
+HAS_ADMIN_PERM=$(echo "$ADMIN_INFO" | jq '.permissions // [] | map(select(. == "admin")) | length' 2>/dev/null || echo "0")
 
 # Test 1: Admin has admin permission
 if [ "$HAS_ADMIN_PERM" -gt 0 ]; then
@@ -125,8 +125,8 @@ log_test "Admin Sees All Meetings" "PASS" "Admin can see $ALL_MEETINGS meetings 
 
 # Test 4: Admin permissions persist regardless of "acting as" role
 # The "Act As" feature is UI-only and doesn't affect actual permissions
-ADMIN_PERMS_AFTER=$(echo "$ADMIN_INFO" | jq '.permissions // []' 2>/dev/null || echo "[]")
-if echo "$ADMIN_PERMS_AFTER" | jq -e 'map(select(. == "admin")) | length > 0' > /dev/null 2>&1; then
+ADMIN_PERMS_AFTER=$(echo "$ADMIN_INFO" | jq '.permissions // [] | map(select(. == "admin")) | length' 2>/dev/null || echo "0")
+if [ "$ADMIN_PERMS_AFTER" -gt 0 ]; then
   log_test "Admin Permissions Persist" "PASS" "Admin permission remains regardless of UI role simulation"
 else
   log_test "Admin Permissions Persist" "FAIL" "Admin permission lost"

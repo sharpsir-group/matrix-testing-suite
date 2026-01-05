@@ -1,4 +1,4 @@
-# MemberType Assignment Test Results - Mon Jan  5 08:11:51 PM UTC 2026
+# MemberType Assignment Test Results - Mon Jan  5 10:04:06 PM UTC 2026
 
 ## Test Coverage
 
@@ -11,7 +11,7 @@ This test suite covers MemberType assignment functionality:
 
 ## Create User with MemberType
 
-Created user membertype.test.1767643911@sharpsir.group with MemberType Agent (ID: bba7fa99-4430-48d4-8c4f-1c4a6e7156b4)
+Created user membertype.test.1767650646@sharpsir.group with MemberType Agent (ID: a6aae778-22bc-4d52-b8de-acdc0397af5f)
 
 ✅ PASS: Create User with MemberType
 ## Verify MemberType in user_metadata
@@ -34,11 +34,11 @@ MemberType updated to Broker: member_type=Broker, user_metadata.member_type=Brok
 MemberType updated in members table via PATCH: Broker
 
 ✅ PASS: Verify MemberType Update in member record
-  ⚠️  Agent: User created but MemberType not verified (ID: 3c04adee-367a-4e2a-916f-49ab7c006a78, Type: )
-  ⚠️  Broker: User created but MemberType not verified (ID: 5f040b02-5e3f-4d09-bb73-b8b2c73feec5, Type: )
-  ⚠️  OfficeManager: User created but MemberType not verified (ID: 1e9d69e9-6cb2-4442-a8d6-4d6569c76157, Type: )
-  ⚠️  MLSStaff: User created but MemberType not verified (ID: 3d649676-f7d8-4951-9f7c-dfa412b8da7a, Type: )
-  ⚠️  Staff: User created but MemberType not verified (ID: 68182f33-a59b-43fa-949b-8058108f4821, Type: )
+  ⚠️  Agent: User created but MemberType not verified (ID: 9e621ba0-15ca-4c6f-9b1d-eecce4a3bfbd, Type: )
+  ⚠️  Broker: User created but MemberType not verified (ID: 6b7bb914-2b21-455a-9830-a97694baa049, Type: )
+  ⚠️  OfficeManager: User created but MemberType not verified (ID: 7cd98fac-97d8-4652-88de-6115c53154b5, Type: )
+  ⚠️  MLSStaff: User created but MemberType not verified (ID: 9f75f288-6291-440b-b1ec-871d17713e0f, Type: )
+  ⚠️  Staff: User created but MemberType not verified (ID: d10fb9e8-518c-4bfa-a256-d39b27628857, Type: )
 ## Test All MemberTypes
 
 All MemberTypes (Agent, Broker, OfficeManager, MLSStaff, Staff) can be assigned
@@ -46,7 +46,7 @@ All MemberTypes (Agent, Broker, OfficeManager, MLSStaff, Staff) can be assigned
 ✅ PASS: Test All MemberTypes
 ## List Users with MemberType
 
-Found 11 users with MemberType assigned (out of 24 total)
+Found 12 users with MemberType assigned (out of 31 total)
 
 ✅ PASS: List Users with MemberType
 

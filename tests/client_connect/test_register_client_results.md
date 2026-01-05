@@ -1,4 +1,4 @@
-# Register Client Test Results - Mon Jan  5 08:12:58 PM UTC 2026
+# Register Client Test Results - Mon Jan  5 10:05:04 PM UTC 2026
 
 ## Authentication (Broker1)
 
@@ -8,25 +8,25 @@ Authenticated as cy.nikos.papadopoulos@cyprus-sothebysrealty.com (User ID: 058ac
 
 ## Register Client - Complete Form
 
-Created client ID: 42d0809f-307c-4ab7-ade6-53e9a42298c0 with all fields populated
+Created client ID: 7a227389-b56f-44bd-ba32-f1b2c3d5c82a with all fields populated
 
 ✅ PASS: Register Client - Complete Form
 
 ## Register Client - Minimal Fields
 
-Created client ID: 3b454824-8a1e-4c5b-97b8-c3d55780872e with only required fields
+Created client ID: b5e73380-6637-49f3-bffa-8f1bcfcd362b with only required fields
 
 ✅ PASS: Register Client - Minimal Fields
 
 ## Register Client - Seller Intent
 
-Created seller client ID: 3933c753-c77d-4b8e-b37b-94307b673347
+Created seller client ID: 73ccbb79-008a-48ed-96a6-0c941c16790e
 
 ✅ PASS: Register Client - Seller Intent
 
 ## Register Client - Multiple Intents
 
-Created client ID: f673ac71-1050-4907-9b94-33fc11f79010 with intents: buy, rent
+Created client ID: b650d957-03f2-43a4-84a9-a584165fb18e with intents: buy, rent
 
 ✅ PASS: Register Client - Multiple Intents
 
@@ -44,13 +44,13 @@ Client correctly owned by broker1 (Member ID: e6b55301-3dbf-4797-963f-8e178f4c6e
 
 ## Register Client - Lead Origin (other)
 
-Created client ID: e91826db-4402-4972-a7a8-d7a7e75c7ff2 with lead_origin: other
+Created client ID: 05c50183-5acc-4c28-8910-6509252d0f88 with lead_origin: other
 
 ✅ PASS: Register Client - Lead Origin (other)
 
 ## Register Client - Budget Range
 
-Created client ID: 3142b017-11aa-4d92-9426-f9409b74a474 with budget €500K-€1M
+Created client ID: 6cf841ad-de3d-41e5-93dd-e1b031e150aa with budget €500K-€1M
 
 ✅ PASS: Register Client - Budget Range
 
@@ -65,13 +65,13 @@ Broker1 cannot see Broker2's contact (isolation working)
 
 ## Contact Center Sees All Contacts
 
-Contact Center sees 66 contacts (should see all)
+Contact Center sees 81 contacts (should see all)
 
 ✅ PASS: Contact Center Sees All Contacts
 
 ## Sales Manager Sees All Contacts
 
-Sales Manager sees 66 contacts (should see all)
+Sales Manager sees 81 contacts (should see all)
 
 ✅ PASS: Sales Manager Sees All Contacts
 
