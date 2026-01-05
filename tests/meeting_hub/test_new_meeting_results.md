@@ -1,4 +1,4 @@
-# New Meeting Test Results - Mon Jan  5 10:05:13 PM UTC 2026
+# New Meeting Test Results - Mon Jan  5 10:22:23 PM UTC 2026
 
 ## Authentication (Broker1)
 
@@ -8,37 +8,37 @@ Authenticated as cy.nikos.papadopoulos@cyprus-sothebysrealty.com (User ID: 058ac
 
 ## New Meeting - Buyer Meeting (Complete)
 
-Created BuyerShowing meeting ID: 6cc1b9c5-1c68-488b-a0bf-1b746e1a380d with all fields (Budget: €250000)
+Created BuyerShowing meeting ID: 67d5b0a6-e7d1-4db7-b8d4-db5380f3440e with all fields (Budget: €250000)
 
 ✅ PASS: New Meeting - Buyer Meeting (Complete)
 
 ## New Meeting - Seller Meeting (Complete)
 
-Created SellerMeeting meeting ID: ccf56a9e-5c12-41af-95a5-371e5291d91c (Price: €750000, City: Limassol)
+Created SellerMeeting meeting ID: 6646a11c-7129-4930-8339-470fdd41837e (Price: €750000, City: Limassol)
 
 ✅ PASS: New Meeting - Seller Meeting (Complete)
 
 ## New Meeting - Buyer Meeting (Minimal)
 
-Created BuyerShowing meeting ID: bfe83d13-c7f4-42a3-9c07-b0128460a141 with minimal fields
+Created BuyerShowing meeting ID: 890b8561-3e58-4a44-869f-d61bc0da6f17 with minimal fields
 
 ✅ PASS: New Meeting - Buyer Meeting (Minimal)
 
 ## New Meeting - Seller Meeting (Minimal)
 
-Created SellerMeeting meeting ID: 7dace8a2-f0ee-46e8-9164-c12f22f097cf with minimal fields
+Created SellerMeeting meeting ID: f01985a3-f82b-4efb-888e-af0b8ec49cac with minimal fields
 
 ✅ PASS: New Meeting - Seller Meeting (Minimal)
 
 ## New Meeting - Buyer Count Display
 
-Broker1 has 18 buyer meetings (Buyer (18))
+Broker1 has 23 buyer meetings (Buyer (23))
 
 ✅ PASS: New Meeting - Buyer Count Display
 
 ## New Meeting - Seller Count Display
 
-Broker1 has 18 seller meetings (Seller (18))
+Broker1 has 23 seller meetings (Seller (23))
 
 ✅ PASS: New Meeting - Seller Count Display
 
@@ -56,13 +56,13 @@ Unclear validation behavior:
 
 ## New Meeting - Buyer Property Types
 
-Created BuyerShowing meeting ID: b3669a87-1636-4fab-9efe-48c0a8229fd1 with property_type: House
+Created BuyerShowing meeting ID: c4a414a1-0b88-4c5f-b4b8-f67af4dea02a with property_type: House
 
 ✅ PASS: New Meeting - Buyer Property Types
 
 ## New Meeting - Seller Cities
 
-Created SellerMeeting meeting ID: ffc63b44-6a37-448b-a49b-8e4490e0e4a4 with city: Paphos
+Created SellerMeeting meeting ID: a38dbcce-b05d-4090-9678-0ef90fc3d92b with city: Paphos
 
 ✅ PASS: New Meeting - Seller Cities
 

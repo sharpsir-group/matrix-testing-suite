@@ -1,4 +1,4 @@
-# SSO Console Final Test Results - Mon Jan  5 10:03:00 PM UTC 2026
+# SSO Console Final Test Results - Mon Jan  5 10:20:03 PM UTC 2026
 
 ## Test Coverage
 
@@ -12,7 +12,7 @@ This test suite covers all SSO Console functionality:
 
 ## List Users
 
-Retrieved 24 users via admin-users endpoint
+Retrieved 31 users via admin-users endpoint
 
 ✅ PASS: List Users
 
@@ -24,7 +24,7 @@ Retrieved user: admin@sharpsir.group
 
 ## Create User
 
-Created user: sso.console.test.1767650583@sharpsir.group (ID: 962b81ec-8235-4ec6-b190-39d1afffeaf9)
+Created user: sso.console.test.1767651608@sharpsir.group (ID: 474a1901-d1b9-4449-b7ed-253c933e4f1c)
 
 ✅ PASS: Create User
 
@@ -42,7 +42,7 @@ Retrieved 0 applications
 
 ## Create Application
 
-Created application: fvuwlkPlwX9e3kb4xu-i9DOHIhX5c7Gq
+Created application: 0aa-V8HCVykW1WZoUe.S1lBclPVA0AGA
 
 ✅ PASS: Create Application
 
@@ -54,7 +54,7 @@ Retrieved 0 groups
 
 ## Create Group
 
-Created group: cc05ba09-37e2-4966-9586-85dee95ebe89
+Created group: 4bdcccd7-0009-42f5-827e-240d3de769b6
 
 ✅ PASS: Create Group
 
@@ -96,7 +96,7 @@ Retrieved 0 templates
 
 ## Create Permission Template
 
-Created template: 7793b45b-764d-4f60-a676-64b786e3897a
+Created template: a3cb9a2f-aa1e-4fd5-899c-8b3d788a6bc4
 
 ✅ PASS: Create Permission Template
 
