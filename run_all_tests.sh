@@ -96,6 +96,7 @@ SUITES=(
   "Workflows:tests/workflows/test_workflows.sh"
   "Data Isolation:tests/isolation/test_isolation.sh"
   "Layer 2 App Permissions:tests/app_permissions/test_layer2_permissions.sh"
+  "User Permissions & Visibility:tests/app_permissions/test_user_permissions.sh"
 )
 
 SUITE_COUNT=0

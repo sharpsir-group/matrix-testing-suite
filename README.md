@@ -108,7 +108,29 @@ Run this test suite before:
 - Tenant-level isolation
 - Role-based access control
 
-**Total: 73+ tests**
+### User Permissions & Visibility Tests (NEW - 15 tests)
+- **User Management Automation**
+  - Create user
+  - Read user details
+  - Update user member_type
+  - Update user display name
+  - List all users
+- **Permission Management**
+  - Grant permission to user
+  - Verify permission was granted
+  - Revoke permission
+- **Broker Isolation**
+  - Broker 1 contacts visibility (own data only)
+  - Broker 2 contacts visibility (own data only)
+  - Broker data isolation verification
+- **Manager Visibility (Contact Center & Sales Manager)**
+  - MLS Staff (Contact Center) full access
+  - Office Manager (Sales Manager) full access
+  - MLS Staff sees all members
+  - Office Manager sees all members
+  - Manager vs Broker visibility comparison
+
+**Total: 88+ tests**
 
 ## 🚀 Quick Start
 
@@ -126,6 +148,7 @@ matrix-testing-suite/
 ├── setup_test_environment.sh # Setup test data
 ├── tests/
 │   ├── sso_console/         # SSO Console tests
+│   ├── app_permissions/     # User permissions & visibility tests
 │   ├── client_connect/      # Client Connect tests
 │   ├── meeting_hub/         # Meeting Hub tests
 │   ├── workflows/           # Workflow tests
