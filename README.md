@@ -102,6 +102,20 @@ Run this test suite before:
 - Unauthorized Update Prevention
 - Meeting Cancellation
 
+### Tenant Management Tests
+Location: `tests/tenants/test_tenant_management.sh`
+
+Tests tenant CRUD operations and user tenant assignment:
+- List all tenants
+- Create new tenant
+- Get tenant details
+- Update tenant
+- Set default tenant
+- Create user with tenant assignment
+- Update user tenant assignment
+- Delete tenant
+- Tenant data structure validation
+
 ### Data Isolation Tests
 - Broker-level isolation
 - Office-level isolation
