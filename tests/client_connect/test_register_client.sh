@@ -7,6 +7,13 @@ set -e
 
 # Source environment variables
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "${SCRIPT_DIR}/../.."
+
+# Load main .env file
+if [ -f ".env" ]; then
+  source ".env"
+fi
+
 if [ -f "${SCRIPT_DIR}/../../scripts/auth_helper.sh" ]; then
   source "${SCRIPT_DIR}/../../scripts/auth_helper.sh"
 fi
@@ -16,17 +23,24 @@ SUPABASE_URL="${SUPABASE_URL:-https://xgubaguglsnokjyudgvc.supabase.co}"
 ANON_KEY="${ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhndWJhZ3VnbHNub2tqeXVkZ3ZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwOTU3NzMsImV4cCI6MjA4MjY3MTc3M30._fBqrJhF8UWkbo2b4m_f06FFtr4h0-4wGer2Dbn8BBA}"
 SERVICE_ROLE_KEY="${SERVICE_ROLE_KEY:-}"
 
-TENANT_ID="${TENANT_ID:-1d306081-79be-42cb-91bc-9f9d5f0fd7dd}"
+# Load tenant IDs if available
+if [ -f "${SCRIPT_DIR}/../../tests/data/tenant_ids.env" ]; then
+  source "${SCRIPT_DIR}/../../tests/data/tenant_ids.env"
+fi
+
+TENANT_ID="${TENANT_ID:-${CY_TENANT_ID:-1d306081-79be-42cb-91bc-9f9d5f0fd7dd}}"
+HU_TENANT_ID="${HU_TENANT_ID:-}"
 RESULTS_FILE="${SCRIPT_DIR}/test_register_client_results.md"
 PASS=0
 FAIL=0
 SKIP=0
 
 # Test user credentials (can be overridden via environment)
-BROKER1_EMAIL="${BROKER1_EMAIL:-broker1.test@sharpsir.group}"
-BROKER1_PASSWORD="${BROKER1_PASSWORD:-${TEST_PASSWORD:-TestPass123!}}"
-BROKER2_EMAIL="${BROKER2_EMAIL:-broker2.test@sharpsir.group}"
-BROKER2_PASSWORD="${BROKER2_PASSWORD:-${TEST_PASSWORD:-TestPass123!}}"
+TEST_PASSWORD="${TEST_PASSWORD:-TestPass123!}"
+BROKER1_EMAIL="${BROKER1_EMAIL:-cy.nikos.papadopoulos@cyprus-sothebysrealty.com}"
+BROKER1_PASSWORD="${BROKER1_PASSWORD:-${TEST_PASSWORD}}"
+BROKER2_EMAIL="${BROKER2_EMAIL:-cy.elena.konstantinou@cyprus-sothebysrealty.com}"
+BROKER2_PASSWORD="${BROKER2_PASSWORD:-${TEST_PASSWORD}}"
 
 echo "# Register Client Test Results - $(date)" > "$RESULTS_FILE"
 echo "" >> "$RESULTS_FILE"
@@ -436,6 +450,187 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
   fi
 else
   log_test "Register Client - Budget Range" "SKIP" "Authentication required"
+fi
+
+# ============================================
+# RBAC AND APPROVAL WORKFLOW TESTS
+# ============================================
+echo ""
+echo "=== RBAC and Approval Workflow Tests ==="
+echo "" >> "$RESULTS_FILE"
+echo "## RBAC and Approval Workflow Tests" >> "$RESULTS_FILE"
+echo "" >> "$RESULTS_FILE"
+
+# Setup: Authenticate additional users (use CY test users if available)
+BROKER2_EMAIL="${BROKER2_EMAIL:-cy.elena.konstantinou@cyprus-sothebysrealty.com}"
+CONTACT_CENTER_EMAIL="${CONTACT_CENTER_EMAIL:-cy.anna.georgiou@cyprus-sothebysrealty.com}"
+SALES_MANAGER_EMAIL="${SALES_MANAGER_EMAIL:-cy.dimitris.michaelides@cyprus-sothebysrealty.com}"
+
+BROKER2_TOKEN=$(authenticate_user "$BROKER2_EMAIL" "$BROKER2_PASSWORD" 2>&1)
+BROKER2_AUTH_EXIT=$?
+
+if [ $BROKER2_AUTH_EXIT -eq 0 ] && [ -n "$BROKER2_TOKEN" ] && [ "$BROKER2_TOKEN" != "null" ]; then
+  BROKER2_AUTH_RESP=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Content-Type: application/json" \
+    -d "{\"email\":\"${BROKER2_EMAIL}\",\"password\":\"${BROKER2_PASSWORD:-${TEST_PASSWORD}}\"}")
+  BROKER2_USER_ID=$(echo "$BROKER2_AUTH_RESP" | jq -r 'if type=="object" then .user.id // empty else empty end' 2>/dev/null || echo "")
+  BROKER2_MEMBER_ID=$(get_member_id "$BROKER2_TOKEN" "$BROKER2_USER_ID")
+fi
+
+CONTACT_CENTER_TOKEN=$(authenticate_user "$CONTACT_CENTER_EMAIL" "$TEST_PASSWORD" 2>/dev/null || echo "")
+SALES_MANAGER_TOKEN=$(authenticate_user "$SALES_MANAGER_EMAIL" "$TEST_PASSWORD" 2>/dev/null || echo "")
+
+# Test 9: Broker Isolation - CY-Nikos cannot see CY-Elena's contacts
+echo "Test 9: Broker Isolation - CY-Nikos cannot see CY-Elena's contacts..."
+if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER2_TOKEN" ] && [ -n "$BROKER2_MEMBER_ID" ]; then
+  # Create contact for Broker2
+  TIMESTAMP=$(date +%s)
+  BROKER2_CONTACT=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/contacts" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Authorization: Bearer ${BROKER2_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -H "Prefer: return=representation" \
+    -d "{
+      \"tenant_id\": \"${TENANT_ID}\",
+      \"owning_member_id\": \"${BROKER2_MEMBER_ID}\",
+      \"first_name\": \"Elena\",
+      \"last_name\": \"Client\",
+      \"phone\": \"+35799999999\",
+      \"contact_type\": \"Buyer\",
+      \"contact_status\": \"Prospect\",
+      \"client_intent\": [\"buy\"]
+    }" 2>/dev/null || echo "")
+  
+  BROKER2_CONTACT_ID=$(echo "$BROKER2_CONTACT" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
+  
+  if [ -n "$BROKER2_CONTACT_ID" ]; then
+    # Broker1 tries to see Broker2's contact
+    VISIBLE=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?id=eq.${BROKER2_CONTACT_ID}&select=id" \
+      -H "apikey: ${ANON_KEY}" \
+      -H "Authorization: Bearer ${BROKER1_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
+    
+    if [ "$VISIBLE" -eq 0 ]; then
+      log_test "Broker Isolation - Cannot See Other Broker Contacts" "PASS" "Broker1 cannot see Broker2's contact (isolation working)"
+    else
+      log_test "Broker Isolation - Cannot See Other Broker Contacts" "FAIL" "Broker1 can see Broker2's contact (isolation broken)"
+    fi
+  else
+    log_test "Broker Isolation - Cannot See Other Broker Contacts" "SKIP" "Could not create Broker2 contact"
+  fi
+else
+  log_test "Broker Isolation - Cannot See Other Broker Contacts" "SKIP" "Tokens not available"
+fi
+
+# Test 10: Contact Center sees all contacts
+echo "Test 10: Contact Center (CY-Anna) sees all contacts..."
+if [ -n "$CONTACT_CENTER_TOKEN" ]; then
+  ALL_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?tenant_id=eq.${TENANT_ID}&select=id" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Authorization: Bearer ${CONTACT_CENTER_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
+  
+  if [ "$ALL_CONTACTS" -ge 2 ]; then
+    log_test "Contact Center Sees All Contacts" "PASS" "Contact Center sees $ALL_CONTACTS contacts (should see all)"
+  else
+    log_test "Contact Center Sees All Contacts" "FAIL" "Contact Center sees only $ALL_CONTACTS contacts (expected >= 2)"
+  fi
+else
+  log_test "Contact Center Sees All Contacts" "SKIP" "Contact Center token not available"
+fi
+
+# Test 11: Sales Manager sees all contacts
+echo "Test 11: Sales Manager (CY-Dimitris) sees all contacts..."
+if [ -n "$SALES_MANAGER_TOKEN" ]; then
+  MANAGER_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?tenant_id=eq.${TENANT_ID}&select=id" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Authorization: Bearer ${SALES_MANAGER_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
+  
+  if [ "$MANAGER_CONTACTS" -ge 2 ]; then
+    log_test "Sales Manager Sees All Contacts" "PASS" "Sales Manager sees $MANAGER_CONTACTS contacts (should see all)"
+  else
+    log_test "Sales Manager Sees All Contacts" "FAIL" "Sales Manager sees only $MANAGER_CONTACTS contacts (expected >= 2)"
+  fi
+else
+  log_test "Sales Manager Sees All Contacts" "SKIP" "Sales Manager token not available"
+fi
+
+# Test 12: PendingReview status workflow
+echo "Test 12: PendingReview status workflow..."
+if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
+  TIMESTAMP=$(date +%s)
+  REVIEW_CONTACT=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/contacts" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Authorization: Bearer ${BROKER1_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -H "Prefer: return=representation" \
+    -d "{
+      \"tenant_id\": \"${TENANT_ID}\",
+      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"first_name\": \"Review\",
+      \"last_name\": \"Test\",
+      \"phone\": \"+35798888888\",
+      \"contact_type\": \"Buyer\",
+      \"contact_status\": \"Prospect\",
+      \"client_intent\": [\"buy\"]
+    }")
+  
+  REVIEW_CONTACT_ID=$(echo "$REVIEW_CONTACT" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
+  
+  if [ -n "$REVIEW_CONTACT_ID" ]; then
+    # Change to PendingReview
+    UPDATE_RESPONSE=$(curl -s -X PATCH "${SUPABASE_URL}/rest/v1/contacts?id=eq.${REVIEW_CONTACT_ID}" \
+      -H "apikey: ${ANON_KEY}" \
+      -H "Authorization: Bearer ${BROKER1_TOKEN}" \
+      -H "Content-Type: application/json" \
+      -H "Prefer: return=representation" \
+      -d '{"contact_status": "PendingReview"}')
+    
+    REVIEW_STATUS=$(echo "$UPDATE_RESPONSE" | jq -r 'if type=="array" then .[0].contact_status else .contact_status end // empty' 2>/dev/null || echo "")
+    
+    if [ "$REVIEW_STATUS" = "PendingReview" ]; then
+      log_test "PendingReview Status Workflow" "PASS" "Contact status changed to PendingReview"
+      
+      # Test approval
+      if [ -n "$SALES_MANAGER_TOKEN" ]; then
+        APPROVE_RESPONSE=$(curl -s -X PATCH "${SUPABASE_URL}/rest/v1/contacts?id=eq.${REVIEW_CONTACT_ID}" \
+          -H "apikey: ${ANON_KEY}" \
+          -H "Authorization: Bearer ${SALES_MANAGER_TOKEN}" \
+          -H "Content-Type: application/json" \
+          -H "Prefer: return=representation" \
+          -d '{"contact_status": "Active"}')
+        
+        APPROVED_STATUS=$(echo "$APPROVE_RESPONSE" | jq -r 'if type=="array" then .[0].contact_status else .contact_status end // empty' 2>/dev/null || echo "")
+        
+        if [ "$APPROVED_STATUS" = "Active" ]; then
+          log_test "Sales Manager Approves Contact" "PASS" "Contact approved: Prospect -> PendingReview -> Active"
+        else
+          log_test "Sales Manager Approves Contact" "FAIL" "Status is $APPROVED_STATUS, expected Active"
+        fi
+      fi
+    else
+      log_test "PendingReview Status Workflow" "FAIL" "Status is $REVIEW_STATUS, expected PendingReview"
+    fi
+  else
+    log_test "PendingReview Status Workflow" "SKIP" "Could not create contact"
+  fi
+else
+  log_test "PendingReview Status Workflow" "SKIP" "Authentication required"
+fi
+
+# Test 13: Cross-tenant isolation
+echo "Test 13: Cross-tenant isolation..."
+if [ -n "$BROKER1_TOKEN" ] && [ -n "$HU_TENANT_ID" ]; then
+  HU_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?tenant_id=eq.${HU_TENANT_ID}&select=id" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Authorization: Bearer ${BROKER1_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
+  
+  if [ "$HU_CONTACTS" -eq 0 ]; then
+    log_test "Cross-Tenant Isolation" "PASS" "CY broker cannot see HU tenant contacts"
+  else
+    log_test "Cross-Tenant Isolation" "FAIL" "CY broker sees $HU_CONTACTS HU contacts (should be 0)"
+  fi
+else
+  log_test "Cross-Tenant Isolation" "SKIP" "HU tenant or token not available"
 fi
 
 # Summary

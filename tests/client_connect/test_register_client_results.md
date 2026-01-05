@@ -1,32 +1,32 @@
-# Register Client Test Results - Fri Jan  2 10:12:08 PM UTC 2026
+# Register Client Test Results - Mon Jan  5 08:12:58 PM UTC 2026
 
 ## Authentication (Broker1)
 
-Authenticated as broker1.test@sharpsir.group (User ID: 4c629bfc-6c2d-49c1-babb-a83bc79599d9, Member ID: 3c3396ad-108a-4b2d-87be-7a9b8016657e)
+Authenticated as cy.nikos.papadopoulos@cyprus-sothebysrealty.com (User ID: 058acd65-fbec-4c9b-a921-7517491c326d, Member ID: e6b55301-3dbf-4797-963f-8e178f4c6ec2)
 
 ✅ PASS: Authentication (Broker1)
 
 ## Register Client - Complete Form
 
-Created client ID: 453c8705-e6a4-4e78-b837-561dafe9bc18 with all fields populated
+Created client ID: 42d0809f-307c-4ab7-ade6-53e9a42298c0 with all fields populated
 
 ✅ PASS: Register Client - Complete Form
 
 ## Register Client - Minimal Fields
 
-Created client ID: b33b1653-956c-4343-b6a8-0c15d60b5f31 with only required fields
+Created client ID: 3b454824-8a1e-4c5b-97b8-c3d55780872e with only required fields
 
 ✅ PASS: Register Client - Minimal Fields
 
 ## Register Client - Seller Intent
 
-Created seller client ID: 333ea89a-899d-4d45-8ee1-b2dec65bc6a8
+Created seller client ID: 3933c753-c77d-4b8e-b37b-94307b673347
 
 ✅ PASS: Register Client - Seller Intent
 
 ## Register Client - Multiple Intents
 
-Created client ID: d825e38d-f546-412d-b5ed-d96b992f5189 with intents: buy, rent
+Created client ID: f673ac71-1050-4907-9b94-33fc11f79010 with intents: buy, rent
 
 ✅ PASS: Register Client - Multiple Intents
 
@@ -38,29 +38,68 @@ Validation error correctly returned: 23502 - null value in column "last_name" of
 
 ## Register Client - Data Isolation
 
-Client correctly owned by broker1 (Member ID: 3c3396ad-108a-4b2d-87be-7a9b8016657e)
+Client correctly owned by broker1 (Member ID: e6b55301-3dbf-4797-963f-8e178f4c6ec2)
 
 ✅ PASS: Register Client - Data Isolation
 
 ## Register Client - Lead Origin (other)
 
-Created client ID: 863a11da-86eb-46de-91ca-ecb4096cfafe with lead_origin: other
+Created client ID: e91826db-4402-4972-a7a8-d7a7e75c7ff2 with lead_origin: other
 
 ✅ PASS: Register Client - Lead Origin (other)
 
 ## Register Client - Budget Range
 
-Created client ID: f777bd1e-4e12-483a-80a2-a2572c688e4a with budget €500K-€1M
+Created client ID: 3142b017-11aa-4d92-9426-f9409b74a474 with budget €500K-€1M
 
 ✅ PASS: Register Client - Budget Range
+
+
+## RBAC and Approval Workflow Tests
+
+## Broker Isolation - Cannot See Other Broker Contacts
+
+Broker1 cannot see Broker2's contact (isolation working)
+
+✅ PASS: Broker Isolation - Cannot See Other Broker Contacts
+
+## Contact Center Sees All Contacts
+
+Contact Center sees 66 contacts (should see all)
+
+✅ PASS: Contact Center Sees All Contacts
+
+## Sales Manager Sees All Contacts
+
+Sales Manager sees 66 contacts (should see all)
+
+✅ PASS: Sales Manager Sees All Contacts
+
+## PendingReview Status Workflow
+
+Contact status changed to PendingReview
+
+✅ PASS: PendingReview Status Workflow
+
+## Sales Manager Approves Contact
+
+Contact approved: Prospect -> PendingReview -> Active
+
+✅ PASS: Sales Manager Approves Contact
+
+## Cross-Tenant Isolation
+
+CY broker cannot see HU tenant contacts
+
+✅ PASS: Cross-Tenant Isolation
 
 
 ## Test Summary
 
 | Result | Count |
 |--------|-------|
-| ✅ PASS | 9 |
+| ✅ PASS | 15 |
 | ❌ FAIL | 0 |
 | ⏭️  SKIP | 0 |
-| **Total** | **9** |
+| **Total** | **15** |
 

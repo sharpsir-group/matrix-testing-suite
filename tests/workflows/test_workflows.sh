@@ -56,18 +56,22 @@ get_member_id() {
   echo "$member_resp" | jq -r 'if type=="array" then .[0].id else .id end // empty'
 }
 
-BROKER1_TOKEN=$(authenticate "broker1.test@sharpsir.group")
+BROKER1_TOKEN=$(authenticate "cy.nikos.papadopoulos@cyprus-sothebysrealty.com")
 BROKER1_USER_ID=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
   -H "apikey: ${ANON_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{"email":"broker1.test@sharpsir.group","password":"'${TEST_PASSWORD}'"}' | jq -r '.user.id')
+  -d '{"email":"cy.nikos.papadopoulos@cyprus-sothebysrealty.com","password":"'${TEST_PASSWORD}'"}' | jq -r '.user.id')
 BROKER1_MEMBER_ID=$(get_member_id "$BROKER1_TOKEN" "$BROKER1_USER_ID")
 
-MANAGER_TOKEN=$(authenticate "manager.test@sharpsir.group")
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-admin1234}"
+MANAGER_TOKEN=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
+  -H "apikey: ${ANON_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@sharpsir.group","password":"'${ADMIN_PASSWORD}'"}' | jq -r '.access_token // empty')
 MANAGER_USER_ID=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
   -H "apikey: ${ANON_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{"email":"manager.test@sharpsir.group","password":"'${TEST_PASSWORD}'"}' | jq -r '.user.id')
+  -d '{"email":"admin@sharpsir.group","password":"'${ADMIN_PASSWORD}'"}' | jq -r '.user.id')
 
 # Test 1: Approval Workflow - Manager approves Prospect contact
 echo "Test 1: Approval Workflow - Manager approves Prospect contact..."
@@ -222,23 +226,13 @@ fi
 
 # Test 6: MLS Staff Access - Can see all contacts
 echo "Test 6: MLS Staff Access..."
-MLS_EMAIL="mlsstaff.test@sharpsir.group"
+MLS_EMAIL="cy.anna.georgiou@cyprus-sothebysrealty.com"
 MLS_AUTH=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
   -H "apikey: ${ANON_KEY}" \
   -H "Content-Type: application/json" \
   -d '{"email":"'${MLS_EMAIL}'","password":"'${TEST_PASSWORD}'"}')
 
 MLS_TOKEN=$(echo "$MLS_AUTH" | jq -r '.access_token // empty' 2>/dev/null || echo "")
-
-if [ -z "$MLS_TOKEN" ] || [ "$MLS_TOKEN" = "null" ]; then
-  # Try alternative email
-  MLS_EMAIL="mlsstaff.cyprus@sharpsir.group"
-  MLS_AUTH=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
-    -H "apikey: ${ANON_KEY}" \
-    -H "Content-Type: application/json" \
-    -d '{"email":"'${MLS_EMAIL}'","password":"'${TEST_PASSWORD}'"}')
-  MLS_TOKEN=$(echo "$MLS_AUTH" | jq -r '.access_token // empty' 2>/dev/null || echo "")
-fi
 
 if [ -n "$MLS_TOKEN" ] && [ "$MLS_TOKEN" != "null" ]; then
   MLS_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?select=id" \
@@ -260,11 +254,12 @@ fi
 
 # Test 7: Agent Access - Can only see own data
 echo "Test 7: Agent Access..."
-AGENT_TOKEN=$(authenticate "agent.test@sharpsir.group")
+AGENT_EMAIL="cy.elena.konstantinou@cyprus-sothebysrealty.com"
+AGENT_TOKEN=$(authenticate "$AGENT_EMAIL")
 AGENT_USER_ID=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
   -H "apikey: ${ANON_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{"email":"agent.test@sharpsir.group","password":"'${TEST_PASSWORD}'"}' | jq -r '.user.id')
+  -d '{"email":"'${AGENT_EMAIL}'","password":"'${TEST_PASSWORD}'"}' | jq -r '.user.id')
 AGENT_MEMBER_ID=$(get_member_id "$AGENT_TOKEN" "$AGENT_USER_ID")
 
 if [ -n "$AGENT_TOKEN" ] && [ "$AGENT_TOKEN" != "null" ]; then
@@ -286,7 +281,7 @@ fi
 
 # Test 8: Unauthorized Update - Broker cannot update other broker's contact
 echo "Test 8: Unauthorized Update Test..."
-BROKER2_TOKEN=$(authenticate "broker2.test@sharpsir.group")
+BROKER2_TOKEN=$(authenticate "cy.elena.konstantinou@cyprus-sothebysrealty.com")
 
 if [ -n "$BROKER2_TOKEN" ] && [ "$BROKER2_TOKEN" != "null" ] && [ -n "$PROSPECT_CONTACT_ID" ]; then
   # Broker2 tries to update Broker1's contact

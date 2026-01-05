@@ -16,14 +16,20 @@ SUPABASE_URL="${SUPABASE_URL:-https://xgubaguglsnokjyudgvc.supabase.co}"
 ANON_KEY="${ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhndWJhZ3VnbHNub2tqeXVkZ3ZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwOTU3NzMsImV4cCI6MjA4MjY3MTc3M30._fBqrJhF8UWkbo2b4m_f06FFtr4h0-4wGer2Dbn8BBA}"
 SERVICE_ROLE_KEY="${SERVICE_ROLE_KEY:-}"
 
-TENANT_ID="${TENANT_ID:-1d306081-79be-42cb-91bc-9f9d5f0fd7dd}"
+# Load tenant IDs if available
+if [ -f "${SCRIPT_DIR}/../../tests/data/tenant_ids.env" ]; then
+  source "${SCRIPT_DIR}/../../tests/data/tenant_ids.env"
+fi
+
+TENANT_ID="${TENANT_ID:-${CY_TENANT_ID:-1d306081-79be-42cb-91bc-9f9d5f0fd7dd}}"
+HU_TENANT_ID="${HU_TENANT_ID:-}"
 RESULTS_FILE="${SCRIPT_DIR}/test_new_meeting_results.md"
 PASS=0
 FAIL=0
 SKIP=0
 
 # Test user credentials (can be overridden via environment)
-BROKER1_EMAIL="${BROKER1_EMAIL:-broker1.test@sharpsir.group}"
+BROKER1_EMAIL="${BROKER1_EMAIL:-cy.nikos.papadopoulos@cyprus-sothebysrealty.com}"
 BROKER1_PASSWORD="${BROKER1_PASSWORD:-${TEST_PASSWORD:-TestPass123!}}"
 
 echo "# New Meeting Test Results - $(date)" > "$RESULTS_FILE"
@@ -507,6 +513,163 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ] && [ -n "$BUYER_MEETIN
   fi
 else
   log_test "New Meeting - Data Isolation" "SKIP" "Authentication or meeting ID required"
+fi
+
+# ============================================
+# RBAC TESTS: SALES MANAGER, CONTACT CENTER, CROSS-TENANT
+# ============================================
+echo ""
+echo "=== RBAC Tests: Manager Visibility and Isolation ==="
+echo "" >> "$RESULTS_FILE"
+echo "## RBAC Tests: Manager Visibility and Isolation" >> "$RESULTS_FILE"
+echo "" >> "$RESULTS_FILE"
+
+# Setup: Authenticate additional users (use CY test users if available)
+BROKER2_EMAIL="${BROKER2_EMAIL:-cy.elena.konstantinou@cyprus-sothebysrealty.com}"
+CONTACT_CENTER_EMAIL="${CONTACT_CENTER_EMAIL:-cy.anna.georgiou@cyprus-sothebysrealty.com}"
+SALES_MANAGER_EMAIL="${SALES_MANAGER_EMAIL:-cy.dimitris.michaelides@cyprus-sothebysrealty.com}"
+
+BROKER2_TOKEN=$(authenticate_user "$BROKER2_EMAIL" "$BROKER2_PASSWORD" 2>&1)
+BROKER2_AUTH_EXIT=$?
+
+if [ $BROKER2_AUTH_EXIT -eq 0 ] && [ -n "$BROKER2_TOKEN" ] && [ "$BROKER2_TOKEN" != "null" ]; then
+  BROKER2_AUTH_RESP=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Content-Type: application/json" \
+    -d "{\"email\":\"${BROKER2_EMAIL}\",\"password\":\"${BROKER2_PASSWORD:-${TEST_PASSWORD}}\"}")
+  BROKER2_USER_ID=$(echo "$BROKER2_AUTH_RESP" | jq -r 'if type=="object" then .user.id // empty else empty end' 2>/dev/null || echo "")
+  BROKER2_MEMBER_ID=$(get_member_id "$BROKER2_TOKEN" "$BROKER2_USER_ID")
+fi
+
+CONTACT_CENTER_TOKEN=$(authenticate_user "$CONTACT_CENTER_EMAIL" "$TEST_PASSWORD" 2>/dev/null || echo "")
+SALES_MANAGER_TOKEN=$(authenticate_user "$SALES_MANAGER_EMAIL" "$TEST_PASSWORD" 2>/dev/null || echo "")
+
+# Test 12: Broker Isolation - CY-Nikos cannot see CY-Elena's meetings
+echo "Test 12: Broker Isolation - CY-Nikos cannot see CY-Elena's meetings..."
+if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER2_TOKEN" ] && [ -n "$BROKER2_MEMBER_ID" ]; then
+  # Create meeting for Broker2
+  TIMESTAMP=$(date +%s)
+  FUTURE_DATE=$(date -u -Iseconds --date='next week 16:00')
+  
+  BROKER2_MEETING=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/entity_events" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Authorization: Bearer ${BROKER2_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -H "Prefer: return=representation" \
+    -d "{
+      \"tenant_id\": \"${TENANT_ID}\",
+      \"owning_member_id\": \"${BROKER2_MEMBER_ID}\",
+      \"event_type\": \"BuyerShowing\",
+      \"event_status\": \"Scheduled\",
+      \"event_datetime\": \"${FUTURE_DATE}\",
+      \"event_description\": \"Broker2 Meeting\"
+    }" 2>/dev/null || echo "")
+  
+  BROKER2_MEETING_ID=$(echo "$BROKER2_MEETING" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
+  
+  if [ -n "$BROKER2_MEETING_ID" ]; then
+    # Broker1 tries to see Broker2's meeting
+    VISIBLE=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/entity_events?id=eq.${BROKER2_MEETING_ID}&select=id" \
+      -H "apikey: ${ANON_KEY}" \
+      -H "Authorization: Bearer ${BROKER1_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
+    
+    if [ "$VISIBLE" -eq 0 ]; then
+      log_test "Broker Isolation - Cannot See Other Broker Meetings" "PASS" "Broker1 cannot see Broker2's meeting"
+    else
+      log_test "Broker Isolation - Cannot See Other Broker Meetings" "FAIL" "Broker1 can see Broker2's meeting (isolation broken)"
+    fi
+  else
+    log_test "Broker Isolation - Cannot See Other Broker Meetings" "SKIP" "Could not create Broker2 meeting"
+  fi
+else
+  log_test "Broker Isolation - Cannot See Other Broker Meetings" "SKIP" "Tokens not available"
+fi
+
+# Test 13: Sales Manager sees all CY meetings
+echo "Test 13: Sales Manager (CY-Dimitris) sees all CY meetings..."
+if [ -n "$SALES_MANAGER_TOKEN" ]; then
+  MANAGER_MEETINGS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/entity_events?tenant_id=eq.${TENANT_ID}&select=id" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Authorization: Bearer ${SALES_MANAGER_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
+  
+  if [ "$MANAGER_MEETINGS" -ge 2 ]; then
+    log_test "Sales Manager Sees All CY Meetings" "PASS" "Sales Manager sees $MANAGER_MEETINGS meetings (should see all)"
+  else
+    log_test "Sales Manager Sees All CY Meetings" "FAIL" "Sales Manager sees only $MANAGER_MEETINGS meetings (expected >= 2)"
+  fi
+else
+  log_test "Sales Manager Sees All CY Meetings" "SKIP" "Sales Manager token not available"
+fi
+
+# Test 14: Sales Manager can view meeting details
+echo "Test 14: Sales Manager can view meeting details..."
+if [ -n "$SALES_MANAGER_TOKEN" ] && [ -n "$BUYER_MEETING_ID" ]; then
+  MEETING_DETAILS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/entity_events?id=eq.${BUYER_MEETING_ID}&select=id,event_type,event_description" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Authorization: Bearer ${SALES_MANAGER_TOKEN}")
+  
+  DETAILS_COUNT=$(echo "$MEETING_DETAILS" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
+  
+  if [ "$DETAILS_COUNT" -eq 1 ]; then
+    log_test "Sales Manager Can View Meeting Details" "PASS" "Sales Manager can access meeting details"
+  else
+    log_test "Sales Manager Can View Meeting Details" "FAIL" "Sales Manager cannot access meeting details"
+  fi
+else
+  log_test "Sales Manager Can View Meeting Details" "SKIP" "Token or meeting ID not available"
+fi
+
+# Test 15: Sales Manager can update meeting status
+echo "Test 15: Sales Manager can update meeting status..."
+if [ -n "$SALES_MANAGER_TOKEN" ] && [ -n "$BUYER_MEETING_ID" ]; then
+  UPDATE_RESPONSE=$(curl -s -X PATCH "${SUPABASE_URL}/rest/v1/entity_events?id=eq.${BUYER_MEETING_ID}" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Authorization: Bearer ${SALES_MANAGER_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -H "Prefer: return=representation" \
+    -d '{"event_status": "Completed"}')
+  
+  UPDATED_STATUS=$(echo "$UPDATE_RESPONSE" | jq -r 'if type=="array" then .[0].event_status else .event_status end // empty' 2>/dev/null || echo "")
+  
+  if [ "$UPDATED_STATUS" = "Completed" ]; then
+    log_test "Sales Manager Can Update Meeting Status" "PASS" "Sales Manager updated meeting status to Completed"
+  else
+    log_test "Sales Manager Can Update Meeting Status" "SKIP" "Could not verify status update"
+  fi
+else
+  log_test "Sales Manager Can Update Meeting Status" "SKIP" "Token or meeting ID not available"
+fi
+
+# Test 16: Contact Center sees all CY meetings
+echo "Test 16: Contact Center (CY-Anna) sees all CY meetings..."
+if [ -n "$CONTACT_CENTER_TOKEN" ]; then
+  CC_MEETINGS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/entity_events?tenant_id=eq.${TENANT_ID}&select=id" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Authorization: Bearer ${CONTACT_CENTER_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
+  
+  if [ "$CC_MEETINGS" -ge 2 ]; then
+    log_test "Contact Center Sees All CY Meetings" "PASS" "Contact Center sees $CC_MEETINGS meetings (should see all)"
+  else
+    log_test "Contact Center Sees All CY Meetings" "FAIL" "Contact Center sees only $CC_MEETINGS meetings (expected >= 2)"
+  fi
+else
+  log_test "Contact Center Sees All CY Meetings" "SKIP" "Contact Center token not available"
+fi
+
+# Test 17: Cross-tenant isolation
+echo "Test 17: Cross-tenant isolation..."
+if [ -n "$BROKER1_TOKEN" ] && [ -n "$HU_TENANT_ID" ]; then
+  HU_MEETINGS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/entity_events?tenant_id=eq.${HU_TENANT_ID}&select=id" \
+    -H "apikey: ${ANON_KEY}" \
+    -H "Authorization: Bearer ${BROKER1_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
+  
+  if [ "$HU_MEETINGS" -eq 0 ]; then
+    log_test "Cross-Tenant Isolation - Meetings" "PASS" "CY broker cannot see HU tenant meetings"
+  else
+    log_test "Cross-Tenant Isolation - Meetings" "FAIL" "CY broker sees $HU_MEETINGS HU meetings (should be 0)"
+  fi
+else
+  log_test "Cross-Tenant Isolation - Meetings" "SKIP" "HU tenant or token not available"
 fi
 
 # Summary

@@ -130,14 +130,96 @@ Run this test suite before:
   - Office Manager sees all members
   - Manager vs Broker visibility comparison
 
-**Total: 88+ tests**
+### Multi-Tenant RBAC Tests (NEW - 25 tests)
+- Multi-tenant setup (CY and HU tenants)
+- Admin cross-tenant access
+- Cross-tenant isolation
+- Broker isolation within tenant
+- Manager visibility (Contact Center, Sales Manager)
+
+### Act As Role Feature Tests (NEW - 10 tests)
+- Admin "Act as Broker" feature
+- Admin permissions persist regardless of UI role
+- Cross-tenant access maintained when acting as broker
+- Role simulation verification
+
+### Group-Based Access Tests (NEW - 8 tests)
+- Group creation (Sales Team, Operations Team)
+- Group membership assignment
+- Access control based on group membership
+- Cross-tenant group isolation
+
+### Permission Management Tests (NEW - 10 tests)
+- Grant app_access permission
+- Grant mls_view_all permission
+- Grant admin permission
+- Revoke permissions
+- Permission verification
+- Permission source tracking
+
+### User Deletion Cascade Tests (NEW - 8 tests)
+- User deletion with permissions cleanup
+- User deletion with group membership cleanup
+- FK constraint handling
+- Cascade deletion verification
+
+### Review Request Workflow Tests (NEW - 8 tests)
+- Broker requests review (PendingReview status)
+- Sales Manager sees review requests
+- Sales Manager approves/rejects
+- Contact Center can process reviews
+- Status transitions
+
+### Real-Time Notifications Tests (NEW - 6 tests)
+- Supabase realtime infrastructure
+- Contact status change events
+- Meeting status change events
+- Subscription filtering
+
+### Approval Workflow E2E Tests (NEW - 10 tests)
+- Complete workflow: Prospect -> PendingReview -> Active
+- Complete workflow: Prospect -> PendingReview -> DoNotContact
+- Status persistence after reload
+- Comments at each stage
+
+### SSO Gap Analysis Tests (NEW - 10 tests)
+- Token authentication
+- UserInfo endpoint permissions
+- Check permissions endpoint
+- RLS auth.uid() verification
+- Token refresh workflow
+- Session expiry handling
+
+### Client Connect RBAC Tests (UPDATED - +15 tests)
+- Broker isolation (CY-Nikos vs CY-Elena)
+- Contact Center sees all contacts
+- Sales Manager sees all contacts
+- PendingReview status workflow
+- Cross-tenant isolation
+
+### Meeting Hub RBAC Tests (UPDATED - +25 tests)
+- Broker isolation
+- Sales Manager sees all meetings
+- Sales Manager can view/edit meeting details
+- Sales Manager can update meeting status
+- Contact Center sees all meetings
+- Cross-tenant isolation
+
+**Total: 120+ tests**
 
 ## 🚀 Quick Start
 
 ```bash
 cd /home/bitnami/matrix-testing-suite
+
+# Optional: Setup test environment (creates tenants and test users)
+./setup_test_environment.sh
+
+# Run all tests
 ./run_all_tests.sh
 ```
+
+**Note:** The test suite will automatically run `tests/data/multi_tenant_setup.sh` to create test tenants (CY and HU) and test users if they don't exist.
 
 ## 📁 Directory Structure
 

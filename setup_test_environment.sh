@@ -70,9 +70,15 @@ else
   echo "⚠️  Hungary office not found"
 fi
 
-# Create test users if needed
+# Run multi-tenant setup script
 echo ""
-echo "Test users will be created by individual test suites as needed."
+echo "Setting up multi-tenant test data..."
+if [ -f "tests/data/multi_tenant_setup.sh" ]; then
+  chmod +x tests/data/multi_tenant_setup.sh
+  tests/data/multi_tenant_setup.sh || echo "⚠️  Multi-tenant setup had issues (may already exist)"
+else
+  echo "⚠️  Multi-tenant setup script not found: tests/data/multi_tenant_setup.sh"
+fi
 echo ""
 
 echo "========================================="

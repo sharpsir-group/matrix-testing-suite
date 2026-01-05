@@ -69,7 +69,7 @@ echo "Authenticating as Admin..."
 ADMIN_AUTH_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
   -H "apikey: ${ANON_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{"email":"manager.test@sharpsir.group","password":"'${TEST_PASSWORD}'"}')
+  -d '{"email":"admin@sharpsir.group","password":"admin1234"}')
 
 ADMIN_TOKEN=$(echo "$ADMIN_AUTH_RESPONSE" | jq -r '.access_token // empty')
 ADMIN_USER_ID=$(echo "$ADMIN_AUTH_RESPONSE" | jq -r '.user.id // empty')
@@ -78,7 +78,7 @@ if [ -z "$ADMIN_TOKEN" ] || [ "$ADMIN_TOKEN" = "null" ]; then
   echo "❌ Failed to authenticate as admin"
   echo "Response: $ADMIN_AUTH_RESPONSE"
   echo "⚠️  Skipping tests that require authentication"
-  log_test "Authentication" "SKIP" "Test user manager.test@sharpsir.group not available or password incorrect"
+  log_test "Authentication" "SKIP" "Test user admin@sharpsir.group not available or password incorrect"
   exit 0
 fi
 

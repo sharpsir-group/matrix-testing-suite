@@ -42,7 +42,7 @@ echo "Authenticating Broker1..."
 BROKER1_AUTH=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
   -H "apikey: ${ANON_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{"email":"broker1.test@sharpsir.group","password":"'${TEST_PASSWORD}'"}')
+  -d '{"email":"cy.nikos.papadopoulos@cyprus-sothebysrealty.com","password":"'${TEST_PASSWORD}'"}')
 
 BROKER1_TOKEN=$(echo "$BROKER1_AUTH" | jq -r '.access_token // empty')
 BROKER1_USER_ID=$(echo "$BROKER1_AUTH" | jq -r '.user.id // empty')
@@ -50,7 +50,7 @@ BROKER1_USER_ID=$(echo "$BROKER1_AUTH" | jq -r '.user.id // empty')
 if [ -z "$BROKER1_TOKEN" ] || [ "$BROKER1_TOKEN" = "null" ]; then
   echo "❌ Failed to authenticate Broker1"
   echo "⚠️  Skipping tests that require Broker1 authentication"
-  echo "Set BROKER1_PASSWORD environment variable or create test user broker1.test@sharpsir.group"
+  echo "Set BROKER1_PASSWORD environment variable or create test user cy.nikos.papadopoulos@cyprus-sothebysrealty.com"
   exit 0
 fi
 
@@ -177,7 +177,7 @@ echo "Test 4: Authenticating Broker2..."
 BROKER2_AUTH=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
   -H "apikey: ${ANON_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{"email":"broker2.test@sharpsir.group","password":"'${TEST_PASSWORD}'"}')
+  -d '{"email":"cy.elena.konstantinou@cyprus-sothebysrealty.com","password":"'${TEST_PASSWORD}'"}')
 
 BROKER2_TOKEN=$(echo "$BROKER2_AUTH" | jq -r '.access_token // empty')
 BROKER2_USER_ID=$(echo "$BROKER2_AUTH" | jq -r '.user.id // empty')
@@ -209,10 +209,11 @@ fi
 
 # Test 5: Manager sees all meetings
 echo "Test 5: Authenticating Manager..."
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-admin1234}"
 MANAGER_AUTH=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
   -H "apikey: ${ANON_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{"email":"manager.test@sharpsir.group","password":"'${TEST_PASSWORD}'"}')
+  -d '{"email":"admin@sharpsir.group","password":"'${ADMIN_PASSWORD}'"}')
 
 MANAGER_TOKEN=$(echo "$MANAGER_AUTH" | jq -r '.access_token // empty')
 
@@ -241,7 +242,7 @@ echo "Test 6: Authenticating Hungary Broker..."
 HUNGARY_AUTH=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
   -H "apikey: ${ANON_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{"email":"broker.hungary.test@sharpsir.group","password":"'${TEST_PASSWORD}'"}')
+  -d '{"email":"hu.adam.kovacs@sothebys-realty.hu","password":"'${TEST_PASSWORD}'"}')
 
 HUNGARY_TOKEN=$(echo "$HUNGARY_AUTH" | jq -r '.access_token // empty')
 HUNGARY_USER_ID=$(echo "$HUNGARY_AUTH" | jq -r '.user.id // empty')

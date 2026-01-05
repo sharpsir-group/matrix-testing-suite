@@ -60,7 +60,7 @@ echo "Authenticating as Admin..."
 AUTH_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
   -H "apikey: ${ANON_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{"email":"manager.test@sharpsir.group","password":"'${TEST_PASSWORD}'"}')
+  -d '{"email":"admin@sharpsir.group","password":"admin1234"}')
 
 SUPABASE_TOKEN=$(echo "$AUTH_RESPONSE" | jq -r '.access_token // empty')
 ADMIN_USER_ID=$(echo "$AUTH_RESPONSE" | jq -r '.user.id // empty')
@@ -435,7 +435,7 @@ echo "Test 16: Non-Admin Access Denied..."
 BROKER_AUTH=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
   -H "apikey: ${ANON_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{"email":"broker1.test@sharpsir.group","password":"'${TEST_PASSWORD}'"}')
+  -d '{"email":"cy.nikos.papadopoulos@cyprus-sothebysrealty.com","password":"'${TEST_PASSWORD}'"}')
 
 BROKER_TOKEN=$(echo "$BROKER_AUTH" | jq -r '.access_token // empty')
 

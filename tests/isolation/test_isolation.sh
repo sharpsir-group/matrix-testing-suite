@@ -42,9 +42,10 @@ echo "=== Data Isolation Tests ==="
 echo ""
 
 # Authenticate test users
-BROKER1_TOKEN=$(authenticate_user "broker1.test@sharpsir.group" "$TEST_PASSWORD" "$SUPABASE_URL" "$ANON_KEY" 2>/dev/null || echo "")
-BROKER2_TOKEN=$(authenticate_user "broker2.test@sharpsir.group" "$TEST_PASSWORD" "$SUPABASE_URL" "$ANON_KEY" 2>/dev/null || echo "")
-MANAGER_TOKEN=$(authenticate_user "manager.test@sharpsir.group" "$TEST_PASSWORD" "$SUPABASE_URL" "$ANON_KEY" 2>/dev/null || echo "")
+BROKER1_TOKEN=$(authenticate_user "cy.nikos.papadopoulos@cyprus-sothebysrealty.com" "$TEST_PASSWORD" "$SUPABASE_URL" "$ANON_KEY" 2>/dev/null || echo "")
+BROKER2_TOKEN=$(authenticate_user "cy.elena.konstantinou@cyprus-sothebysrealty.com" "$TEST_PASSWORD" "$SUPABASE_URL" "$ANON_KEY" 2>/dev/null || echo "")
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-admin1234}"
+MANAGER_TOKEN=$(authenticate_user "admin@sharpsir.group" "$ADMIN_PASSWORD" "$SUPABASE_URL" "$ANON_KEY" 2>/dev/null || echo "")
 
 # Test 1: Broker-level isolation
 if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER2_TOKEN" ]; then

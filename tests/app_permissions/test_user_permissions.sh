@@ -106,7 +106,7 @@ ADMIN_USER_ID=$(get_user_id "$ADMIN_EMAIL" "$ADMIN_PASSWORD")
 
 if [ -z "$ADMIN_TOKEN" ] || [ "$ADMIN_TOKEN" = "null" ]; then
   echo "❌ Failed to authenticate as admin"
-  log_test "Setup - Admin Authentication" "FAIL" "Could not authenticate manager.test@sharpsir.group"
+  log_test "Setup - Admin Authentication" "FAIL" "Could not authenticate admin@sharpsir.group"
   exit 1
 fi
 echo "✅ Admin authenticated"

@@ -56,7 +56,7 @@ echo "Authenticating as manager..."
 MANAGER_AUTH=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
   -H "apikey: ${ANON_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{"email":"manager.test@sharpsir.group","password":"'${TEST_PASSWORD}'"}')
+  -d '{"email":"admin@sharpsir.group","password":"admin1234"}')
 
 MANAGER_TOKEN=$(echo "$MANAGER_AUTH" | jq -r '.access_token // empty' 2>/dev/null || echo "")
 

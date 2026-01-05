@@ -1,4 +1,4 @@
-# OAuth 2.0 Flow Test Results - Fri Jan  2 10:11:34 PM UTC 2026
+# OAuth 2.0 Flow Test Results - Mon Jan  5 08:11:12 PM UTC 2026
 
 ## Overview
 
@@ -13,13 +13,13 @@ This test suite validates the complete OAuth 2.0 authorization code flow:
 
 ### OAuth Authorize - Missing Parameters
 
-Properly rejected request with missing parameters: invalid_request
+Properly rejected request with missing parameters (HTTP 400): invalid_request
 
 ✅ PASS: OAuth Authorize - Missing Parameters
 
 ### OAuth Authorize - Invalid Client
 
-Properly rejected invalid client: invalid_client
+Properly rejected invalid client (HTTP 401): invalid_client
 
 ✅ PASS: OAuth Authorize - Invalid Client
 
@@ -31,21 +31,21 @@ Should require authentication
 
 ### OAuth Authorize - Authenticated User
 
-Authorization failed (may need app_access privilege): server_error
+Successfully generated authorization code via redirect (HTTP 302)
 
-⏭️  SKIP: OAuth Authorize - Authenticated User
+✅ PASS: OAuth Authorize - Authenticated User
 
 ### OAuth Token - Exchange Authorization Code
 
-Authorization code or client credentials not available
+Successfully exchanged code for access token
 
-⏭️  SKIP: OAuth Token - Exchange Authorization Code
+✅ PASS: OAuth Token - Exchange Authorization Code
 
 ### OAuth UserInfo - Get User Information
 
-OAuth access token not available
+Successfully retrieved user info for correct user
 
-⏭️  SKIP: OAuth UserInfo - Get User Information
+✅ PASS: OAuth UserInfo - Get User Information
 
 ### OAuth UserInfo - Invalid Token
 
@@ -67,18 +67,18 @@ Login page returns HTML content
 
 ### Check Privileges - Public Endpoint
 
-OAuth access token not available
+Unexpected response: {"code":401,"message":"Invalid JWT"}
 
-⏭️  SKIP: Check Privileges - Public Endpoint
+❌ FAIL: Check Privileges - Public Endpoint
 
 
 ## Test Summary
 
 | Metric | Count |
 |--------|-------|
-| Passed | 5 |
-| Failed | 1 |
-| Skipped | 4 |
+| Passed | 8 |
+| Failed | 2 |
+| Skipped | 0 |
 
 ## Notes
 

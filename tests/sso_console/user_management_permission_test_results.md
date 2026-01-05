@@ -1,4 +1,4 @@
-# User Management Privilege Tests - Fri Jan  2 10:11:24 PM UTC 2026
+# User Management Privilege Tests - Mon Jan  5 08:11:00 PM UTC 2026
 
 ## Overview
 
@@ -21,13 +21,13 @@ The `admin` privilege allows non-admin users to perform user management operatio
 
 ### Admin can list users
 
-Admin successfully listed 50 users
+Admin successfully listed 20 users
 
 ✅ PASS: Admin can list users
 
 ### User Manager can list users
 
-User with admin privilege successfully listed 50 users
+User with admin privilege successfully listed 20 users
 
 ✅ PASS: User Manager can list users
 
@@ -63,7 +63,7 @@ Short password rejected: invalid_request
 
 ### Last login data is returned
 
-Last login returned: Jan 2, 2026, 10:11 PM
+Last login returned: Jan 5, 2026, 08:11 PM
 
 ✅ PASS: Last login data is returned
 
