@@ -1,4 +1,4 @@
-# Permission Management Comprehensive Tests - Mon Jan  5 10:21:24 PM UTC 2026
+# Permission Management Comprehensive Tests - Wed Jan  7 12:01:37 PM UTC 2026
 
 ## Test Coverage
 
@@ -12,13 +12,13 @@ This test suite covers all permission management features:
 
 ### List Permissions
 
-Retrieved 23 permissions
+Retrieved 28 permissions
 
 ✅ PASS: List Permissions
 
 ### Grant Permission
 
-Successfully granted app_access permission
+Successfully granted rw_own permission
 
 ✅ PASS: Grant Permission
 
@@ -30,19 +30,19 @@ Successfully revoked permission
 
 ### List Permission Templates
 
-Retrieved 46 templates
+Retrieved 56 templates
 
 ✅ PASS: List Permission Templates
 
 ### Create Permission Template
 
-Created template: b9ec9a6e-d9c7-49ea-9d32-6fea8d0203df
+Created template: 74a23929-40de-4067-9106-d319e71af4ff
 
 ✅ PASS: Create Permission Template
 
 ### Get Audit Log
 
-Retrieved 23 audit log entries
+Retrieved 28 audit log entries
 
 ✅ PASS: Get Audit Log
 

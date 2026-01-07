@@ -1,4 +1,4 @@
-# SSO Console Final Test Results - Mon Jan  5 10:20:03 PM UTC 2026
+# SSO Console Final Test Results - Wed Jan  7 12:00:16 PM UTC 2026
 
 ## Test Coverage
 
@@ -12,7 +12,7 @@ This test suite covers all SSO Console functionality:
 
 ## List Users
 
-Retrieved 31 users via admin-users endpoint
+Retrieved 66 users via admin-users endpoint
 
 ✅ PASS: List Users
 
@@ -24,7 +24,7 @@ Retrieved user: admin@sharpsir.group
 
 ## Create User
 
-Created user: sso.console.test.1767651608@sharpsir.group (ID: 474a1901-d1b9-4449-b7ed-253c933e4f1c)
+Created user: sso.console.test.1767787229@sharpsir.group (ID: 3af169a5-2b4c-4400-9e8a-783ff87c5509)
 
 ✅ PASS: Create User
 
@@ -42,7 +42,7 @@ Retrieved 0 applications
 
 ## Create Application
 
-Created application: 0aa-V8HCVykW1WZoUe.S1lBclPVA0AGA
+Created application: c3e~R.g_iw-E6Igqi9hAikiBIv7E8gh0
 
 ✅ PASS: Create Application
 
@@ -54,7 +54,7 @@ Retrieved 0 groups
 
 ## Create Group
 
-Created group: 4bdcccd7-0009-42f5-827e-240d3de769b6
+Created group: 72fc6518-eb24-41bf-be39-120b49d4d029
 
 ✅ PASS: Create Group
 
@@ -96,7 +96,7 @@ Retrieved 0 templates
 
 ## Create Permission Template
 
-Created template: a3cb9a2f-aa1e-4fd5-899c-8b3d788a6bc4
+Created template: e2dcd472-d667-4b2e-be50-c0fcb147a363
 
 ✅ PASS: Create Permission Template
 
@@ -122,6 +122,6 @@ Skipped: 0
 ## Notes
 
 - All operations use admin token via edge functions (emulating UI)
-- User management operations use admin-users edge function which requires OAuth JWT with admin permission
+- User management operations use admin-users edge function which requires OAuth JWT with rw_global permission
 - Read operations work with regular user tokens
 

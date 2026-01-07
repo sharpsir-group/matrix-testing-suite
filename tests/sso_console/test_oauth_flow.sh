@@ -128,13 +128,13 @@ TEST_USER_ID=$(echo "$USER_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo 
 if [ -n "$TEST_USER_ID" ] && [ "$TEST_USER_ID" != "null" ]; then
   echo "✅ Created test user (ID: $TEST_USER_ID)"
   
-  # Grant app_access privilege
+  # Grant rw_own permission (formerly app_access)
   curl -s -X POST "${SSO_SERVER_URL}/admin-permissions/grant" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
     -d '{
       "user_id": "'${TEST_USER_ID}'",
-      "permission_type": "app_access"
+      "permission_type": "rw_own"
     }' > /dev/null 2>&1 || true
 else
   echo "⚠️  Failed to create test user"
@@ -259,15 +259,15 @@ if [ -n "$TEST_CLIENT_ID" ] && [ -n "$TEST_USER_ID" ]; then
         log_test "OAuth Authorize - Authenticated User" "FAIL" "Unexpected response format (HTTP $HTTP_STATUS): $RESPONSE_BODY"
       fi
     elif [ "$HTTP_STATUS" = "403" ]; then
-      # Access denied - user doesn't have app_access privilege
-      log_test "OAuth Authorize - Authenticated User" "SKIP" "Access denied (403) - user may need app_access privilege: $ERROR - $ERROR_DESC"
+      # Access denied - user doesn't have rw_own permission
+      log_test "OAuth Authorize - Authenticated User" "SKIP" "Access denied (403) - user may need rw_own permission: $ERROR - $ERROR_DESC"
     elif [ "$HTTP_STATUS" = "401" ]; then
       # Invalid token
       log_test "OAuth Authorize - Authenticated User" "FAIL" "Authentication failed (401): $ERROR - $ERROR_DESC"
     elif [ -n "$ERROR" ]; then
       # Other error cases
       if [ "$ERROR" = "access_denied" ]; then
-        log_test "OAuth Authorize - Authenticated User" "SKIP" "Access denied - user may need app_access privilege: $ERROR_DESC"
+        log_test "OAuth Authorize - Authenticated User" "SKIP" "Access denied - user may need rw_own permission: $ERROR_DESC"
       else
         log_test "OAuth Authorize - Authenticated User" "FAIL" "Authorization failed (HTTP $HTTP_STATUS): $ERROR - $ERROR_DESC"
       fi
@@ -446,7 +446,7 @@ echo "" >> "$RESULTS_FILE"
 echo "## Notes" >> "$RESULTS_FILE"
 echo "" >> "$RESULTS_FILE"
 echo "- OAuth flow requires a registered application with valid redirect URI" >> "$RESULTS_FILE"
-echo "- Users need \`app_access\` privilege to complete OAuth authorization" >> "$RESULTS_FILE"
+echo "- Users need \`rw_own\` permission to complete OAuth authorization" >> "$RESULTS_FILE"
 echo "- Authorization codes expire after 10 minutes" >> "$RESULTS_FILE"
 echo "- Access tokens are JWT tokens signed with JWT_SECRET" >> "$RESULTS_FILE"
 echo "" >> "$RESULTS_FILE"

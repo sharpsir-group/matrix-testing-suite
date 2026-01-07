@@ -79,17 +79,16 @@ get_member_id() {
 echo "=== Broker/Agent Functional Tests ==="
 echo ""
 
-# Check if test users exist, otherwise use existing users
-BROKER1_EMAIL="${BROKER1_EMAIL:-slobov@sharp-sothebys-realty.com}"
-BROKER1_PASSWORD="${BROKER1_PASSWORD:-}"
-BROKER2_EMAIL="${BROKER2_EMAIL:-sseregin@sharp-sothebys-realty.com}"
-BROKER2_PASSWORD="${BROKER2_PASSWORD:-}"
-MANAGER_EMAIL="${MANAGER_EMAIL:-slobov@sharp-sothebys-realty.com}"
-MANAGER_PASSWORD="${MANAGER_PASSWORD:-}"
+# Use standard test users with known passwords
+BROKER1_EMAIL="${BROKER1_EMAIL:-cy.nikos.papadopoulos@cyprus-sothebysrealty.com}"
+BROKER1_PASSWORD="${BROKER1_PASSWORD:-TestPass123!}"
+BROKER2_EMAIL="${BROKER2_EMAIL:-cy.elena.konstantinou@cyprus-sothebysrealty.com}"
+BROKER2_PASSWORD="${BROKER2_PASSWORD:-TestPass123!}"
+MANAGER_EMAIL="${MANAGER_EMAIL:-admin@sharpsir.group}"
+MANAGER_PASSWORD="${MANAGER_PASSWORD:-admin1234}"
 
 if [ -z "$BROKER1_PASSWORD" ] || [ -z "$BROKER2_PASSWORD" ] || [ -z "$MANAGER_PASSWORD" ]; then
-  echo "⚠️  Passwords not provided. Tests will show curl commands only."
-  echo "Set: BROKER1_PASSWORD, BROKER2_PASSWORD, MANAGER_PASSWORD"
+  echo "⚠️  Passwords not provided. Using default test passwords."
   echo ""
 fi
 

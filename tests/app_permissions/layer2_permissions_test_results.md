@@ -1,4 +1,4 @@
-# Layer 2 App Permissions Test Results - Mon Jan  5 10:31:17 PM UTC 2026
+# Layer 2 App Permissions Test Results - Wed Jan  7 12:03:13 PM UTC 2026
 
 ## Test Coverage
 
@@ -22,7 +22,7 @@ Permission already exists (expected for duplicate)
 ✅ PASS: Create Permission for Agent
 ## Query Permissions for Agent
 
-Found 4 permissions for Agent in agency-portal
+Found 41 permissions for Agent in agency-portal
 
 ✅ PASS: Query Permissions for Agent
 ## Create Permission for Broker
@@ -60,7 +60,7 @@ Permissions can be created for all MemberTypes
 ✅ PASS: Test Permissions for All MemberTypes
 ## Query Permissions by App and MemberType
 
-Found 4 permissions for Agent in agency-portal
+Found 41 permissions for Agent in agency-portal
 
 ✅ PASS: Query Permissions by App and MemberType
 ## Update Permission

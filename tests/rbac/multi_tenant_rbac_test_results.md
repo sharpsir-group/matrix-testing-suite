@@ -1,4 +1,4 @@
-# Multi-Tenant RBAC Core Tests - Mon Jan  5 10:21:42 PM UTC 2026
+# Multi-Tenant RBAC Core Tests - Wed Jan  7 12:02:00 PM UTC 2026
 
 
 ## Part 1: Multi-Tenant Setup Verification
@@ -38,7 +38,7 @@ Admin can see 4 Hungary users
 
 ### Admin Sees Cyprus Contacts
 
-Admin can access 86 contacts in Cyprus tenant
+Admin can access 164 contacts in Cyprus tenant
 
 **Result:** ✅ PASS
 
@@ -83,13 +83,13 @@ Broker isolation working correctly
 
 ### CY-Anna (Contact Center) Sees All CY Contacts
 
-Contact Center sees 88 contacts (should see all)
+Contact Center sees 166 contacts (should see all)
 
 **Result:** ✅ PASS
 
 ### CY-Dimitris (Sales Manager) Sees All CY Contacts
 
-Sales Manager sees 88 contacts (should see all)
+Sales Manager sees 166 contacts (should see all)
 
 **Result:** ✅ PASS
 

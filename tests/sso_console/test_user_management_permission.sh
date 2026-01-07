@@ -123,15 +123,15 @@ fi
 
 echo "✅ Created user manager (ID: $USER_MANAGER_ID)"
 
-# Grant admin privilege to the test user
-echo "Granting admin privilege..."
+# Grant rw_global permission to the test user
+echo "Granting rw_global permission..."
 USER_MANAGER_PRIVILEGE_GRANTED=false
 GRANT_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-permissions/grant" \
   -H "Authorization: Bearer ${ADMIN_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
     "user_id": "'${USER_MANAGER_ID}'",
-    "permission_type": "admin"
+    "permission_type": "rw_global"
   }')
 
 PRIV_ID=$(echo "$GRANT_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")

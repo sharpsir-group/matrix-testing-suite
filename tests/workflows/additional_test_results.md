@@ -1,8 +1,8 @@
-# Additional Test Scenarios - Mon Jan  5 10:22:31 PM UTC 2026
+# Additional Test Scenarios - Wed Jan  7 12:03:00 PM UTC 2026
 
 ## Approval Workflow (Prospect → Active)
 
-Contact approved: 5e80a166-2a32-4878-9db7-a4e3ec2f8909, status changed to Active
+Contact approved: e90dc92a-8367-412e-b2f5-c25782d7861c, status changed to Active
 
 ✅ PASS: Approval Workflow (Prospect → Active)
 
@@ -34,21 +34,21 @@ Contact details updated successfully
 
 ## MLS Staff Full Access
 
-MLS Staff can see all contacts (101)
+MLS Staff can see all contacts (180)
 
 ✅ PASS: MLS Staff Full Access
 
 ## Agent Data Isolation
 
-Agent sees only own contacts (14)
+Agent sees only own contacts (24)
 
 ✅ PASS: Agent Data Isolation
 
 ## Unauthorized Update Prevention
 
-Test setup incomplete
+Broker2 cannot update Broker1's contact (HTTP 200, RLS working)
 
-❌ FAIL: Unauthorized Update Prevention
+✅ PASS: Unauthorized Update Prevention
 
 ## Meeting Cancellation
 
@@ -59,6 +59,6 @@ Meeting cancelled successfully
 
 ## Test Summary
 
-Passed: 8
-Failed: 1
+Passed: 9
+Failed: 0
 

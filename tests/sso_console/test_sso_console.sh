@@ -315,7 +315,7 @@ else
     -H "Content-Type: application/json" \
     -d '{
       "user_id": "'${TEST_USER_ID}'",
-      "permission_type": "app_access"
+      "permission_type": "rw_own"
     }')
   
   PRIV_ID=$(echo "$GRANT_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
@@ -327,7 +327,7 @@ else
   elif echo "$ERROR" | grep -qi "already exists\|duplicate"; then
     log_test "Grant Permission to User" "PASS" "Permission already exists"
     # Get existing permission ID for revoke test
-    EXISTING=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/sso_user_permissions?user_id=eq.${TEST_USER_ID}&permission_type=eq.app_access&select=id" \
+    EXISTING=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/sso_user_permissions?user_id=eq.${TEST_USER_ID}&permission_type=eq.rw_own&select=id" \
       -H "apikey: ${ANON_KEY}" \
       -H "Authorization: Bearer ${ADMIN_TOKEN}" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
     GRANTED_PRIV_ID="$EXISTING"
@@ -354,7 +354,7 @@ else
   ERROR=$(echo "$REVOKE_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
   
   # Check if permission was removed
-  REMAINING=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/sso_user_permissions?user_id=eq.${TEST_USER_ID}&permission_type=eq.app_access&select=id" \
+  REMAINING=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/sso_user_permissions?user_id=eq.${TEST_USER_ID}&permission_type=eq.rw_own&select=id" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "1")
   
@@ -373,7 +373,7 @@ if [ -n "$GROUP_ID" ] && [ "$GROUP_ID" != "null" ]; then
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
     -d '{
-      "permission_type": "app_access",
+      "permission_type": "rw_own",
       "resource": null
     }')
   
@@ -413,7 +413,7 @@ NEW_TEMPLATE_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-permissions/tem
   -d '{
     "name": "test-template-'$(date +%s)'",
     "description": "Test permission template",
-    "permissions_json": {"permissions": ["app_access", "user_management"]}
+    "permissions_json": {"permissions": ["rw_own"]}
   }')
 
 TEMPLATE_ID=$(echo "$NEW_TEMPLATE_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
@@ -474,7 +474,7 @@ echo "" >> "$RESULTS_FILE"
 echo "## Notes" >> "$RESULTS_FILE"
 echo "" >> "$RESULTS_FILE"
 echo "- All operations use admin token via edge functions (emulating UI)" >> "$RESULTS_FILE"
-echo "- User management operations use admin-users edge function which requires OAuth JWT with admin permission" >> "$RESULTS_FILE"
+echo "- User management operations use admin-users edge function which requires OAuth JWT with rw_global permission" >> "$RESULTS_FILE"
 echo "- Read operations work with regular user tokens" >> "$RESULTS_FILE"
 echo "" >> "$RESULTS_FILE"
 

@@ -41,11 +41,30 @@ log_test() {
 echo "=== Data Isolation Tests ==="
 echo ""
 
-# Authenticate test users
-BROKER1_TOKEN=$(authenticate_user "cy.nikos.papadopoulos@cyprus-sothebysrealty.com" "$TEST_PASSWORD" "$SUPABASE_URL" "$ANON_KEY" 2>/dev/null || echo "")
-BROKER2_TOKEN=$(authenticate_user "cy.elena.konstantinou@cyprus-sothebysrealty.com" "$TEST_PASSWORD" "$SUPABASE_URL" "$ANON_KEY" 2>/dev/null || echo "")
-ADMIN_PASSWORD="${ADMIN_PASSWORD:-admin1234}"
-MANAGER_TOKEN=$(authenticate_user "admin@sharpsir.group" "$ADMIN_PASSWORD" "$SUPABASE_URL" "$ANON_KEY" 2>/dev/null || echo "")
+# Authenticate test users with retry logic for rate limits
+echo "Authenticating test users..."
+sleep 2  # Delay to avoid rate limits
+BROKER1_TOKEN=""
+BROKER2_TOKEN=""
+MANAGER_TOKEN=""
+
+# Retry authentication up to 3 times
+for i in 1 2 3; do
+  if [ -z "$BROKER1_TOKEN" ]; then
+    BROKER1_TOKEN=$(authenticate_user "cy.nikos.papadopoulos@cyprus-sothebysrealty.com" "$TEST_PASSWORD" "$SUPABASE_URL" "$ANON_KEY" 2>/dev/null || echo "")
+    [ -n "$BROKER1_TOKEN" ] && sleep 1 || sleep 2
+  fi
+  if [ -z "$BROKER2_TOKEN" ]; then
+    BROKER2_TOKEN=$(authenticate_user "cy.elena.konstantinou@cyprus-sothebysrealty.com" "$TEST_PASSWORD" "$SUPABASE_URL" "$ANON_KEY" 2>/dev/null || echo "")
+    [ -n "$BROKER2_TOKEN" ] && sleep 1 || sleep 2
+  fi
+  if [ -z "$MANAGER_TOKEN" ]; then
+    ADMIN_PASSWORD="${ADMIN_PASSWORD:-admin1234}"
+    MANAGER_TOKEN=$(authenticate_user "admin@sharpsir.group" "$ADMIN_PASSWORD" "$SUPABASE_URL" "$ANON_KEY" 2>/dev/null || echo "")
+    [ -n "$MANAGER_TOKEN" ] && sleep 1 || sleep 2
+  fi
+  [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER2_TOKEN" ] && [ -n "$MANAGER_TOKEN" ] && break
+done
 
 # Test 1: Broker-level isolation
 if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER2_TOKEN" ]; then

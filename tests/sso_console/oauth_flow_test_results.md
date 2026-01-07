@@ -1,4 +1,4 @@
-# OAuth 2.0 Flow Test Results - Mon Jan  5 10:20:42 PM UTC 2026
+# OAuth 2.0 Flow Test Results - Wed Jan  7 12:01:15 PM UTC 2026
 
 ## Overview
 
@@ -37,15 +37,15 @@ Successfully generated authorization code via redirect (HTTP 302)
 
 ### OAuth Token - Exchange Authorization Code
 
-Token exchange failed: invalid_grant
+Successfully exchanged code for access token
 
-⏭️  SKIP: OAuth Token - Exchange Authorization Code
+✅ PASS: OAuth Token - Exchange Authorization Code
 
 ### OAuth UserInfo - Get User Information
 
-OAuth access token not available
+Successfully retrieved user info for correct user
 
-⏭️  SKIP: OAuth UserInfo - Get User Information
+✅ PASS: OAuth UserInfo - Get User Information
 
 ### OAuth UserInfo - Invalid Token
 
@@ -67,23 +67,23 @@ Login page returns HTML content
 
 ### Check Privileges - Public Endpoint
 
-OAuth access token not available
+Successfully retrieved user privileges
 
-⏭️  SKIP: Check Privileges - Public Endpoint
+✅ PASS: Check Privileges - Public Endpoint
 
 
 ## Test Summary
 
 | Metric | Count |
 |--------|-------|
-| Passed | 7 |
+| Passed | 10 |
 | Failed | 0 |
-| Skipped | 3 |
+| Skipped | 0 |
 
 ## Notes
 
 - OAuth flow requires a registered application with valid redirect URI
-- Users need `app_access` privilege to complete OAuth authorization
+- Users need `rw_own` permission to complete OAuth authorization
 - Authorization codes expire after 10 minutes
 - Access tokens are JWT tokens signed with JWT_SECRET
 

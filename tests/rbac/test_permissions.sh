@@ -85,42 +85,42 @@ if [ -z "$TEST_USER_ID" ]; then
   exit 1
 fi
 
-# Test 1: Grant app_access
+# Test 1: Grant rw_own (formerly app_access)
 GRANT_RESPONSE=$(curl -s -X POST "${SSO_BASE}/admin-permissions/grant" \
   -H "Authorization: Bearer ${ADMIN_TOKEN}" \
   -H "Content-Type: application/json" \
-  -d "{\"user_id\":\"${TEST_USER_ID}\",\"permission_type\":\"app_access\"}")
+  -d "{\"user_id\":\"${TEST_USER_ID}\",\"permission_type\":\"rw_own\"}")
 
 GRANT_ID=$(echo "$GRANT_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
 
 if [ -n "$GRANT_ID" ] || echo "$GRANT_RESPONSE" | grep -qi "already exists"; then
-  log_test "Grant app_access Permission" "PASS" "Permission granted or already exists"
+  log_test "Grant rw_own Permission" "PASS" "Permission granted or already exists"
 else
-  log_test "Grant app_access Permission" "FAIL" "Failed: $GRANT_RESPONSE"
+  log_test "Grant rw_own Permission" "FAIL" "Failed: $GRANT_RESPONSE"
 fi
 
 # Test 2: Verify permission
 USER_INFO=$(curl -s -X GET "${SSO_BASE}/admin-users/${TEST_USER_ID}" \
   -H "Authorization: Bearer ${ADMIN_TOKEN}")
 
-HAS_PERM=$(echo "$USER_INFO" | jq -r '.permissions // [] | map(select(. == "app_access")) | length' 2>/dev/null || echo "0")
+HAS_PERM=$(echo "$USER_INFO" | jq -r '.permissions // [] | map(select(. == "rw_own")) | length' 2>/dev/null || echo "0")
 
 if [ "$HAS_PERM" -gt 0 ]; then
-  log_test "Verify Permission Granted" "PASS" "User has app_access permission"
+  log_test "Verify Permission Granted" "PASS" "User has rw_own permission"
 else
   log_test "Verify Permission Granted" "FAIL" "Permission not found"
 fi
 
-# Test 3: Grant mls_view_all
+# Test 3: Grant rw_org (formerly mls_view_all)
 MLS_GRANT=$(curl -s -X POST "${SSO_BASE}/admin-permissions/grant" \
   -H "Authorization: Bearer ${ADMIN_TOKEN}" \
   -H "Content-Type: application/json" \
-  -d "{\"user_id\":\"${TEST_USER_ID}\",\"permission_type\":\"mls_view_all\"}")
+  -d "{\"user_id\":\"${TEST_USER_ID}\",\"permission_type\":\"rw_org\"}")
 
 if echo "$MLS_GRANT" | jq -e '.id' > /dev/null 2>&1 || echo "$MLS_GRANT" | grep -qi "already exists"; then
-  log_test "Grant mls_view_all Permission" "PASS" "Permission granted"
+  log_test "Grant rw_org Permission" "PASS" "Permission granted"
 else
-  log_test "Grant mls_view_all Permission" "SKIP" "May not be available or already exists"
+  log_test "Grant rw_org Permission" "SKIP" "May not be available or already exists"
 fi
 
 # Cleanup
@@ -134,4 +134,6 @@ echo "| Passed | $PASS | Failed | $FAIL | Skipped | $SKIP |" >> "$RESULTS_FILE"
 echo ""
 echo "Passed: $PASS | Failed: $FAIL | Skipped: $SKIP"
 exit $FAIL
+
+
 

@@ -79,25 +79,25 @@ if [ -z "$ADMIN_TOKEN" ] || [ "$ADMIN_TOKEN" = "null" ]; then
   exit 1
 fi
 
-# Get admin user info to verify admin permissions
+# Get admin user info to verify rw_global permission
 ADMIN_INFO=$(curl -s -X GET "${SSO_BASE}/admin-users/${ADMIN_USER_ID}" \
   -H "Authorization: Bearer ${ADMIN_TOKEN}")
 
-# Extract permissions and check for admin
-HAS_ADMIN_PERM=$(echo "$ADMIN_INFO" | jq -r '.permissions // [] | map(select(. == "admin")) | length' 2>/dev/null)
+# Extract permissions and check for rw_global (formerly admin)
+HAS_ADMIN_PERM=$(echo "$ADMIN_INFO" | jq -r '.permissions // [] | map(select(. == "rw_global")) | length' 2>/dev/null)
 if [ -z "$HAS_ADMIN_PERM" ] || [ "$HAS_ADMIN_PERM" = "null" ]; then
   HAS_ADMIN_PERM=0
 fi
 
-# Test 1: Admin has admin permission
+# Test 1: Admin has rw_global permission
 if [ "$HAS_ADMIN_PERM" -gt 0 ]; then
-  log_test "Admin Has Admin Permission" "PASS" "Admin user has 'admin' permission"
+  log_test "Admin Has Global Permission" "PASS" "Admin user has 'rw_global' permission"
 else
-  log_test "Admin Has Admin Permission" "FAIL" "Admin user missing 'admin' permission (found: $HAS_ADMIN_PERM)"
+  log_test "Admin Has Global Permission" "FAIL" "Admin user missing 'rw_global' permission (found: $HAS_ADMIN_PERM)"
 fi
 
 # Test 2: Admin can see all contacts (even when "acting as broker")
-# This tests that admin with mls_view_all can see all data regardless of UI role
+# This tests that admin with rw_global/rw_org can see all data regardless of UI role
 ALL_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?tenant_id=eq.${CY_TENANT_ID}&select=id" \
   -H "apikey: ${ANON_KEY}" \
   -H "Authorization: Bearer ${ADMIN_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
@@ -117,14 +117,14 @@ log_test "Admin Sees All Meetings" "PASS" "Admin can see $ALL_MEETINGS meetings 
 
 # Test 4: Admin permissions persist regardless of "acting as" role
 # The "Act As" feature is UI-only and doesn't affect actual permissions
-ADMIN_PERMS_AFTER=$(echo "$ADMIN_INFO" | jq -r '.permissions // [] | map(select(. == "admin")) | length' 2>/dev/null)
+ADMIN_PERMS_AFTER=$(echo "$ADMIN_INFO" | jq -r '.permissions // [] | map(select(. == "rw_global")) | length' 2>/dev/null)
 if [ -z "$ADMIN_PERMS_AFTER" ] || [ "$ADMIN_PERMS_AFTER" = "null" ]; then
   ADMIN_PERMS_AFTER=0
 fi
 if [ "$ADMIN_PERMS_AFTER" -gt 0 ]; then
-  log_test "Admin Permissions Persist" "PASS" "Admin permission remains regardless of UI role simulation"
+  log_test "Admin Permissions Persist" "PASS" "Admin permission (rw_global) remains regardless of UI role simulation"
 else
-  log_test "Admin Permissions Persist" "FAIL" "Admin permission lost (found: $ADMIN_PERMS_AFTER)"
+  log_test "Admin Permissions Persist" "FAIL" "Admin permission (rw_global) lost (found: $ADMIN_PERMS_AFTER)"
 fi
 
 # Test 5: Admin can access cross-tenant data
@@ -138,7 +138,43 @@ else
   log_test "Admin Sees Cross-Tenant Data" "SKIP" "Hungary tenant not available"
 fi
 
-# Note: The actual "Act As" UI feature is tested via browser automation or manual testing
+# Test 6: Act As Roles in user_metadata
+# Verify that act_as_roles can be set and retrieved from user_metadata
+TEST_USER_EMAIL="actas.test.${TIMESTAMP}@sharpsir.group"
+CREATE_ACTAS_USER=$(curl -s -X POST "${SSO_BASE}/admin-users" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"${TEST_USER_EMAIL}\",\"password\":\"${TEST_PASSWORD}\",\"member_type\":\"MLSStaff\"}")
+
+ACTAS_USER_ID=$(echo "$CREATE_ACTAS_USER" | jq -r '.id // empty' 2>/dev/null || echo "")
+
+if [ -n "$ACTAS_USER_ID" ]; then
+  # Update user to add act_as_roles
+  UPDATE_ACTAS=$(curl -s -X PUT "${SSO_BASE}/admin-users/${ACTAS_USER_ID}" \
+    -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "{\"user_metadata\":{\"act_as_roles\":[\"OfficeManager\",\"Broker\"]}}")
+  
+  # Get user info to verify act_as_roles
+  ACTAS_USER_INFO=$(curl -s -X GET "${SSO_BASE}/admin-users/${ACTAS_USER_ID}" \
+    -H "Authorization: Bearer ${ADMIN_TOKEN}")
+  
+  ACTAS_ROLES=$(echo "$ACTAS_USER_INFO" | jq -r '.user_metadata.act_as_roles // [] | length' 2>/dev/null || echo "0")
+  
+  if [ "$ACTAS_ROLES" -eq 2 ]; then
+    log_test "Act As Roles in user_metadata" "PASS" "User has 2 act_as_roles configured: OfficeManager, Broker"
+  else
+    log_test "Act As Roles in user_metadata" "FAIL" "Expected 2 act_as_roles, found: $ACTAS_ROLES"
+  fi
+  
+  # Cleanup
+  curl -s -X DELETE "${SSO_BASE}/admin-users/${ACTAS_USER_ID}" \
+    -H "Authorization: Bearer ${ADMIN_TOKEN}" > /dev/null 2>&1 || true
+else
+  log_test "Act As Roles in user_metadata" "SKIP" "Could not create test user"
+fi
+
+# Note: The actual "Act As" UI feature (role switcher in dropdown) is tested via browser automation or manual testing
 # These tests verify that admin permissions work correctly regardless of UI role simulation
 
 # Summary

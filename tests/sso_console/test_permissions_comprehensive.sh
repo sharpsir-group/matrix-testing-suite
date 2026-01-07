@@ -118,14 +118,14 @@ if [ -n "$TEST_USER_ID" ] && [ "$TEST_USER_ID" != "null" ]; then
     -H "Content-Type: application/json" \
     -d '{
       "user_id": "'${TEST_USER_ID}'",
-      "permission_type": "app_access"
+      "permission_type": "rw_own"
     }')
   
   PRIV_ID=$(echo "$GRANT_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
   ERROR=$(echo "$GRANT_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
   
   if [ -n "$PRIV_ID" ] && [ "$PRIV_ID" != "null" ] && [ -z "$ERROR" ]; then
-    log_test "Grant Permission" "PASS" "Successfully granted app_access permission"
+    log_test "Grant Permission" "PASS" "Successfully granted rw_own permission"
     GRANTED_PRIV_ID="$PRIV_ID"
   elif echo "$ERROR" | grep -qi "already exists\|duplicate"; then
     log_test "Grant Permission" "PASS" "Permission already exists (expected)"
@@ -180,7 +180,7 @@ CREATE_TEMPLATE_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-permissions/
   -d '{
     "name": "test-template-'${TIMESTAMP}'",
     "description": "Test permission template",
-    "permissions_json": {"permissions": ["app_access"]}
+    "permissions_json": {"permissions": ["rw_own"]}
   }')
 
 TEMPLATE_ID=$(echo "$CREATE_TEMPLATE_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")

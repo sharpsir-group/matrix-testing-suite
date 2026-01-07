@@ -1,4 +1,4 @@
-# Tenant Management Tests - Mon Jan  5 10:26:28 PM UTC 2026
+# Tenant Management Tests - Wed Jan  7 12:03:47 PM UTC 2026
 
 ### List Tenants
 
@@ -8,13 +8,13 @@ Found 4 tenants
 
 ### Create Tenant
 
-Created tenant ID: 7f482020-9c1d-43c5-9bcb-31c6ce2255bd
+Created tenant ID: 812ce5ff-723d-4108-b49b-39e4eb8f0bee
 
 **Result:** ✅ PASS
 
 ### Get Tenant
 
-Retrieved tenant: Test Tenant 1767651989
+Retrieved tenant: Test Tenant 1767787431
 
 **Result:** ✅ PASS
 
@@ -32,15 +32,15 @@ Tenant set as default
 
 ### Create User with Tenant
 
-User created and assigned to tenant
+Tenant assignment not returned in response (may be default tenant)
 
-**Result:** ✅ PASS
+**Result:** ⏭️ SKIP
 
 ### Update User Tenant
 
-User tenant updated successfully
+Tenant update not returned in response (may use default tenant)
 
-**Result:** ✅ PASS
+**Result:** ⏭️ SKIP
 
 ### Delete Tenant
 
@@ -59,8 +59,8 @@ Tenant objects have required fields (name, slug, id)
 
 | Metric | Count |
 |--------|-------|
-| Passed | 9 |
+| Passed | 7 |
 | Failed | 0 |
-| Skipped | 0 |
+| Skipped | 2 |
 | Total | 9 |
 

@@ -1,12 +1,12 @@
-# Permission Management Tests - Mon Jan  5 10:22:09 PM UTC 2026
+# Permission Management Tests - Wed Jan  7 12:02:37 PM UTC 2026
 
-### Grant app_access Permission
+### Grant rw_own Permission
 Permission granted or already exists
 
 ### Verify Permission Granted
-User has app_access permission
+User has rw_own permission
 
-### Grant mls_view_all Permission
+### Grant rw_org Permission
 Permission granted
 
 

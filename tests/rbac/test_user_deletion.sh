@@ -80,7 +80,7 @@ fi
 curl -s -X POST "${SSO_BASE}/admin-permissions/grant" \
   -H "Authorization: Bearer ${ADMIN_TOKEN}" \
   -H "Content-Type: application/json" \
-  -d "{\"user_id\":\"${TEST_USER_ID}\",\"permission_type\":\"app_access\"}" > /dev/null 2>&1 || true
+  -d "{\"user_id\":\"${TEST_USER_ID}\",\"permission_type\":\"rw_own\"}" > /dev/null 2>&1 || true
 
 # Test 1: Delete user
 DELETE_RESPONSE=$(curl -s -X DELETE "${SSO_BASE}/admin-users/${TEST_USER_ID}" \
@@ -112,4 +112,6 @@ echo "| Passed | $PASS | Failed | $FAIL | Skipped | $SKIP |" >> "$RESULTS_FILE"
 echo ""
 echo "Passed: $PASS | Failed: $FAIL | Skipped: $SKIP"
 exit $FAIL
+
+
 

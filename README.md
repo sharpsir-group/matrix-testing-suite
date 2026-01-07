@@ -164,9 +164,9 @@ Tests tenant CRUD operations and user tenant assignment:
 - Cross-tenant group isolation
 
 ### Permission Management Tests (NEW - 10 tests)
-- Grant app_access permission
-- Grant mls_view_all permission
-- Grant admin permission
+- Grant rw_own permission (formerly app_access)
+- Grant rw_org permission (formerly mls_view_all)
+- Grant rw_global permission (formerly admin)
 - Revoke permissions
 - Permission verification
 - Permission source tracking
