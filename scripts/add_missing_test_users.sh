@@ -204,9 +204,9 @@ create_user_with_member "mlsstaff.test@sharpsir.group" "$TEST_PASSWORD" "MLS Sta
 
 echo ""
 
-# Create agent.test (Cyprus office, Agent member type)
-echo "3. Creating agent.test@sharpsir.group..."
-create_user_with_member "agent.test@sharpsir.group" "$TEST_PASSWORD" "Agent Test" "Agent" "$CYPRUS_OFFICE"
+# Create broker2.test (Cyprus office, Broker member type - replaces agent.test)
+echo "3. Creating broker2.test@sharpsir.group..."
+create_user_with_member "broker2.test@sharpsir.group" "$TEST_PASSWORD" "Broker2 Test" "Broker" "$CYPRUS_OFFICE"
 
 echo ""
 echo "========================================="
@@ -216,7 +216,7 @@ echo ""
 echo "Created users:"
 echo "  - broker.hungary.test@sharpsir.group (Broker, Hungary office)"
 echo "  - mlsstaff.test@sharpsir.group (MLSStaff, Cyprus office)"
-echo "  - agent.test@sharpsir.group (Agent, Cyprus office)"
+echo "  - broker2.test@sharpsir.group (Broker, Cyprus office)"
 echo ""
 echo "Password for all: $TEST_PASSWORD"
 echo ""

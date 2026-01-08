@@ -1,4 +1,4 @@
-# OAuth 2.0 Flow Test Results - Wed Jan  7 12:01:15 PM UTC 2026
+# OAuth 2.0 Flow Test Results - Wed Jan  7 09:59:41 PM UTC 2026
 
 ## Overview
 
@@ -37,15 +37,15 @@ Successfully generated authorization code via redirect (HTTP 302)
 
 ### OAuth Token - Exchange Authorization Code
 
-Successfully exchanged code for access token
+Token exchange failed: invalid_grant
 
-✅ PASS: OAuth Token - Exchange Authorization Code
+⏭️  SKIP: OAuth Token - Exchange Authorization Code
 
 ### OAuth UserInfo - Get User Information
 
-Successfully retrieved user info for correct user
+OAuth access token not available
 
-✅ PASS: OAuth UserInfo - Get User Information
+⏭️  SKIP: OAuth UserInfo - Get User Information
 
 ### OAuth UserInfo - Invalid Token
 
@@ -67,18 +67,18 @@ Login page returns HTML content
 
 ### Check Privileges - Public Endpoint
 
-Successfully retrieved user privileges
+OAuth access token not available
 
-✅ PASS: Check Privileges - Public Endpoint
+⏭️  SKIP: Check Privileges - Public Endpoint
 
 
 ## Test Summary
 
 | Metric | Count |
 |--------|-------|
-| Passed | 10 |
+| Passed | 7 |
 | Failed | 0 |
-| Skipped | 0 |
+| Skipped | 3 |
 
 ## Notes
 

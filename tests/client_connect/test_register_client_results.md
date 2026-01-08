@@ -1,32 +1,32 @@
-# Register Client Test Results - Wed Jan  7 12:02:45 PM UTC 2026
+# Register Client Test Results - Wed Jan  7 10:01:11 PM UTC 2026
 
 ## Authentication (Broker1)
 
-Authenticated as cy.nikos.papadopoulos@cyprus-sothebysrealty.com (User ID: 058acd65-fbec-4c9b-a921-7517491c326d, Member ID: e6b55301-3dbf-4797-963f-8e178f4c6ec2)
+Authenticated as cy.nikos.papadopoulos@cyprus-sothebysrealty.com (User ID: 636f912e-f6dc-4ff8-bc16-e0251e4dfaf2, Member ID: 636f912e-f6dc-4ff8-bc16-e0251e4dfaf2)
 
 ✅ PASS: Authentication (Broker1)
 
 ## Register Client - Complete Form
 
-Created client ID: 5a26b010-52b4-444d-81c9-1e0ed882481d with all fields populated
+Created client ID: e251c0c1-6626-4a41-9cbd-6972e6ad4108 with all fields populated
 
 ✅ PASS: Register Client - Complete Form
 
 ## Register Client - Minimal Fields
 
-Created client ID: de8ef482-c793-4342-94a1-9895b62cf3df with only required fields
+Created client ID: be97d4c0-cc3e-4019-adb8-80156c9adf12 with only required fields
 
 ✅ PASS: Register Client - Minimal Fields
 
 ## Register Client - Seller Intent
 
-Created seller client ID: 274c431d-689a-42d3-b800-127d97dd815a
+Created seller client ID: 902a5293-d8e3-4a68-b442-8e689c7eb2e8
 
 ✅ PASS: Register Client - Seller Intent
 
 ## Register Client - Multiple Intents
 
-Created client ID: 1fc33387-57c0-4a39-9789-aadac1df8746 with intents: buy, rent
+Created client ID: 251f1a7c-2360-46a4-8120-081599080bba with intents: buy, rent
 
 ✅ PASS: Register Client - Multiple Intents
 
@@ -38,19 +38,19 @@ Validation error correctly returned: 23502 - null value in column "last_name" of
 
 ## Register Client - Data Isolation
 
-Client correctly owned by broker1 (Member ID: e6b55301-3dbf-4797-963f-8e178f4c6ec2)
+Client correctly owned by broker1 (Member ID: 636f912e-f6dc-4ff8-bc16-e0251e4dfaf2)
 
 ✅ PASS: Register Client - Data Isolation
 
 ## Register Client - Lead Origin (other)
 
-Created client ID: 03b500a8-aaea-432a-8af9-552d3a97517a with lead_origin: other
+Created client ID: 91fdd1af-28c0-4015-b3ac-4a75e32cff87 with lead_origin: other
 
 ✅ PASS: Register Client - Lead Origin (other)
 
 ## Register Client - Budget Range
 
-Created client ID: 2dbfdb61-1028-435c-ac31-3c9c267d292b with budget €500K-€1M
+Created client ID: b62d9ed8-d223-4ba2-8143-9ed88ed18888 with budget €500K-€1M
 
 ✅ PASS: Register Client - Budget Range
 
@@ -65,13 +65,13 @@ Broker1 cannot see Broker2's contact (isolation working)
 
 ## Contact Center Sees All Contacts
 
-Contact Center sees 175 contacts (should see all)
+Contact Center sees 25 contacts (should see all)
 
 ✅ PASS: Contact Center Sees All Contacts
 
 ## Sales Manager Sees All Contacts
 
-Sales Manager sees 175 contacts (should see all)
+Sales Manager sees 25 contacts (should see all)
 
 ✅ PASS: Sales Manager Sees All Contacts
 

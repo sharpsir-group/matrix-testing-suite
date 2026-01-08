@@ -1,4 +1,4 @@
-# Act As Role Feature Tests - Wed Jan  7 12:02:25 PM UTC 2026
+# Act As Role Feature Tests - Wed Jan  7 10:00:54 PM UTC 2026
 
 ### Admin Has Global Permission
 
@@ -8,13 +8,13 @@ Admin user has 'rw_global' permission
 
 ### Admin Sees All Contacts (Full Access)
 
-Admin can see 166 contacts (has full tenant access)
+Admin can see 16 contacts (has full tenant access)
 
 **Result:** ✅ PASS
 
 ### Admin Sees All Meetings
 
-Admin can see 94 meetings (full tenant access)
+Admin can see 34 meetings (full tenant access)
 
 **Result:** ✅ PASS
 

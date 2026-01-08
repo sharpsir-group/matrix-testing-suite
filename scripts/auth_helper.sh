@@ -24,16 +24,20 @@ authenticate_user() {
 }
 
 get_member_id() {
+  # DEPRECATED: Members table removed - user_id is now used directly
+  # This function now just returns the user_id for backward compatibility
   local token="$1"
   local user_id="$2"
-  local supabase_url="${3:-${SUPABASE_URL}}"
-  local anon_key="${4:-${ANON_KEY}}"
   
-  MEMBER_RESPONSE=$(curl -s -X GET "${supabase_url}/rest/v1/members?user_id=eq.${user_id}&select=id,member_type,office_id" \
-    -H "apikey: ${anon_key}" \
-    -H "Authorization: Bearer ${token}")
-  
-  echo "$MEMBER_RESPONSE" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo ""
+  # Return user_id directly (was previously member_id)
+  echo "$user_id"
+}
+
+get_user_id() {
+  # Alias for get_member_id - returns user_id directly
+  local token="$1"
+  local user_id="$2"
+  echo "$user_id"
 }
 
 get_access_token() {

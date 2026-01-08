@@ -239,7 +239,7 @@ echo "" >> "$RESULTS_FILE"
 # Create test contacts for isolation testing
 if [ -n "$CY_NIKOS_TOKEN" ] && [ -n "$CY_NIKOS_ID" ]; then
   # Get member ID for CY-Nikos
-  MEMBER_RESPONSE=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/members?user_id=eq.${CY_NIKOS_ID}&select=id" \
+  MEMBER_RESPONSE=$(curl -s -X GET "${SUPABASE_URL}# /rest/v1/members? (table removed)user_id=eq.${CY_NIKOS_ID}&select=id" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${CY_NIKOS_TOKEN}")
   
@@ -254,7 +254,7 @@ if [ -n "$CY_NIKOS_TOKEN" ] && [ -n "$CY_NIKOS_ID" ]; then
       -H "Prefer: return=representation" \
       -d "{
         \"tenant_id\": \"${CY_TENANT_ID}\",
-        \"owning_member_id\": \"${CY_NIKOS_MEMBER_ID}\",
+        \"owning_user_id\": \"${CY_NIKOS_MEMBER_ID}\",
         \"first_name\": \"Nikos\",
         \"last_name\": \"Client\",
         \"phone\": \"+35799123456\",
@@ -268,7 +268,7 @@ if [ -n "$CY_NIKOS_TOKEN" ] && [ -n "$CY_NIKOS_ID" ]; then
 fi
 
 if [ -n "$CY_ELENA_TOKEN" ] && [ -n "$CY_ELENA_ID" ]; then
-  MEMBER_RESPONSE=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/members?user_id=eq.${CY_ELENA_ID}&select=id" \
+  MEMBER_RESPONSE=$(curl -s -X GET "${SUPABASE_URL}# /rest/v1/members? (table removed)user_id=eq.${CY_ELENA_ID}&select=id" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${CY_ELENA_TOKEN}")
   
@@ -282,7 +282,7 @@ if [ -n "$CY_ELENA_TOKEN" ] && [ -n "$CY_ELENA_ID" ]; then
       -H "Prefer: return=representation" \
       -d "{
         \"tenant_id\": \"${CY_TENANT_ID}\",
-        \"owning_member_id\": \"${CY_ELENA_MEMBER_ID}\",
+        \"owning_user_id\": \"${CY_ELENA_MEMBER_ID}\",
         \"first_name\": \"Elena\",
         \"last_name\": \"Client\",
         \"phone\": \"+35799234567\",

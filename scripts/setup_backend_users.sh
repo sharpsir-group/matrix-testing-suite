@@ -35,7 +35,7 @@ create_user_via_admin() {
   local email="$1"
   local password="$2"
   local full_name="$3"
-  local member_type="${4:-Agent}"
+  local member_type="${4:-Broker}"
   
   echo "Creating user: $email..."
   

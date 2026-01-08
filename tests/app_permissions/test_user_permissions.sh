@@ -175,13 +175,13 @@ if [ -n "$NEW_USER_ID" ]; then
   UPDATE_RESPONSE=$(curl -s -X PUT "${SSO_BASE}/admin-users/${NEW_USER_ID}" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
-    -d '{"member_type": "Agent"}')
+    -d '{"member_type": "Broker"}')
   
   UPDATED_TYPE=$(echo "$UPDATE_RESPONSE" | jq -r '.member_type // empty' 2>/dev/null || echo "")
   UPDATE_ERROR=$(echo "$UPDATE_RESPONSE" | jq -r '.error // empty' 2>/dev/null || echo "")
   
-  if [ "$UPDATED_TYPE" = "Agent" ]; then
-    log_test "Update User Member Type" "PASS" "Successfully updated member_type to 'Agent'"
+  if [ "$UPDATED_TYPE" = "Broker" ]; then
+    log_test "Update User Member Type" "PASS" "Successfully updated member_type to 'Broker'"
   else
     log_test "Update User Member Type" "FAIL" "Failed to update: ${UPDATE_RESPONSE}"
   fi
@@ -368,7 +368,7 @@ BROKER2_TOKEN=$(authenticate_user "$BROKER2_EMAIL" "$TEST_PASSWORD")
 # TEST 3.1: Broker 1 contacts visibility
 echo "Test 3.1: Broker 1 can only see own contacts..."
 if [ -n "$BROKER1_TOKEN" ] && [ "$BROKER1_TOKEN" != "null" ]; then
-  BROKER1_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?select=id,contact_full_name,owning_member_id" \
+  BROKER1_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?select=id,full_name,owning_user_id" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${BROKER1_TOKEN}")
   
@@ -387,7 +387,7 @@ fi
 # TEST 3.2: Broker 2 contacts visibility
 echo "Test 3.2: Broker 2 can only see own contacts..."
 if [ -n "$BROKER2_TOKEN" ] && [ "$BROKER2_TOKEN" != "null" ]; then
-  BROKER2_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?select=id,contact_full_name,owning_member_id" \
+  BROKER2_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?select=id,full_name,owning_user_id" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${BROKER2_TOKEN}")
   
@@ -406,20 +406,17 @@ fi
 # TEST 3.3: Broker isolation - different contact sets
 echo "Test 3.3: Brokers see different data (isolation verified)..."
 if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER2_TOKEN" ]; then
-  # Each broker should have isolated data - they shouldn't see each other's member records
-  BROKER1_MEMBERS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/members?select=id,user_id,member_type" \
+  # Members table removed - test data isolation via contacts instead
+  BROKER1_CONTACT_COUNT=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?select=id" \
     -H "apikey: ${ANON_KEY}" \
-    -H "Authorization: Bearer ${BROKER1_TOKEN}")
+    -H "Authorization: Bearer ${BROKER1_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
   
-  BROKER2_MEMBERS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/members?select=id,user_id,member_type" \
+  BROKER2_CONTACT_COUNT=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?select=id" \
     -H "apikey: ${ANON_KEY}" \
-    -H "Authorization: Bearer ${BROKER2_TOKEN}")
+    -H "Authorization: Bearer ${BROKER2_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
   
-  B1_MEMBER_COUNT=$(echo "$BROKER1_MEMBERS" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
-  B2_MEMBER_COUNT=$(echo "$BROKER2_MEMBERS" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
-  
-  # Brokers should see limited member data (typically only themselves or office members)
-  log_test "Broker Data Isolation" "PASS" "Broker 1 sees ${B1_MEMBER_COUNT} members, Broker 2 sees ${B2_MEMBER_COUNT} members (RLS isolation active)"
+  # Brokers should see only their own contacts (RLS isolation)
+  log_test "Broker Data Isolation" "PASS" "Broker 1 sees ${BROKER1_CONTACT_COUNT} contacts, Broker 2 sees ${BROKER2_CONTACT_COUNT} contacts (RLS isolation active)"
 else
   log_test "Broker Data Isolation" "SKIP" "Broker tokens not available"
 fi
@@ -541,16 +538,15 @@ fi
 # TEST 4.3: MLS Staff can see all members
 echo "Test 4.3: MLS Staff can see all tenant members..."
 if [ -n "$MLSSTAFF_TOKEN" ]; then
-  MLS_MEMBERS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/members?select=id,member_full_name,member_type&tenant_id=eq.${TENANT_ID}" \
+  # Members table removed - test via contacts visibility instead
+  MLS_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?select=id&tenant_id=eq.${TENANT_ID}" \
     -H "apikey: ${ANON_KEY}" \
-    -H "Authorization: Bearer ${MLSSTAFF_TOKEN}")
+    -H "Authorization: Bearer ${MLSSTAFF_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
   
-  MLS_M_COUNT=$(echo "$MLS_MEMBERS" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
-  
-  if [ "$MLS_M_COUNT" -ge 0 ]; then
-    log_test "MLS Staff Sees All Members" "PASS" "MLS Staff sees ${MLS_M_COUNT} tenant members"
+  if [ "$MLS_CONTACTS" -ge 0 ]; then
+    log_test "MLS Staff Sees All Contacts" "PASS" "MLS Staff sees ${MLS_CONTACTS} tenant contacts"
   else
-    log_test "MLS Staff Sees All Members" "FAIL" "Could not retrieve members"
+    log_test "MLS Staff Sees All Contacts" "FAIL" "Could not retrieve contacts"
   fi
 else
   log_test "MLS Staff Sees All Members" "SKIP" "Token not available"
@@ -559,16 +555,15 @@ fi
 # TEST 4.4: Office Manager can see all members
 echo "Test 4.4: Office Manager can see all tenant members..."
 if [ -n "$OFFICEMANAGER_TOKEN" ]; then
-  OM_MEMBERS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/members?select=id,member_full_name,member_type&tenant_id=eq.${TENANT_ID}" \
+  # Members table removed - test via contacts visibility instead
+  OM_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?select=id&tenant_id=eq.${TENANT_ID}" \
     -H "apikey: ${ANON_KEY}" \
-    -H "Authorization: Bearer ${OFFICEMANAGER_TOKEN}")
+    -H "Authorization: Bearer ${OFFICEMANAGER_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
   
-  OM_M_COUNT=$(echo "$OM_MEMBERS" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
-  
-  if [ "$OM_M_COUNT" -ge 0 ]; then
-    log_test "Office Manager Sees All Members" "PASS" "Office Manager sees ${OM_M_COUNT} tenant members"
+  if [ "$OM_CONTACTS" -ge 0 ]; then
+    log_test "Office Manager Sees All Contacts" "PASS" "Office Manager sees ${OM_CONTACTS} tenant contacts"
   else
-    log_test "Office Manager Sees All Members" "FAIL" "Could not retrieve members"
+    log_test "Office Manager Sees All Contacts" "FAIL" "Could not retrieve contacts"
   fi
 else
   log_test "Office Manager Sees All Members" "SKIP" "Token not available"
@@ -577,17 +572,17 @@ fi
 # TEST 4.5: Visibility comparison - Managers see more than Brokers
 echo "Test 4.5: Managers see more data than Brokers..."
 if [ -n "$BROKER1_TOKEN" ] && [ -n "$MLSSTAFF_TOKEN" ]; then
-  # Compare member visibility
-  B1_M=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/members?select=id&tenant_id=eq.${TENANT_ID}" \
+  # Compare contact visibility (members table removed)
+  B1_C=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?select=id&tenant_id=eq.${TENANT_ID}" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${BROKER1_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
   
-  MLS_M=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/members?select=id&tenant_id=eq.${TENANT_ID}" \
+  MLS_C=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?select=id&tenant_id=eq.${TENANT_ID}" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${MLSSTAFF_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
   
-  if [ "$MLS_M" -ge "$B1_M" ]; then
-    log_test "Manager vs Broker Visibility" "PASS" "MLS Staff sees ${MLS_M} members, Broker sees ${B1_M} (Manager has broader access)"
+  if [ "$MLS_C" -ge "$B1_C" ]; then
+    log_test "Manager vs Broker Visibility" "PASS" "MLS Staff sees ${MLS_C} contacts, Broker sees ${B1_C} (Manager has broader access)"
   else
     log_test "Manager vs Broker Visibility" "FAIL" "Expected MLS Staff to see >= Broker. MLS: ${MLS_M}, Broker: ${B1_M}"
   fi

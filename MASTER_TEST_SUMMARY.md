@@ -92,7 +92,7 @@ Comprehensive test suite to run **before showing system to users** and **before 
 - ✅ Meeting Edit
 - ✅ Contact Edit
 - ✅ MLS Staff Full Access
-- ✅ Agent Data Isolation
+- ✅ Broker Data Isolation
 - ✅ Unauthorized Update Prevention
 - ✅ Meeting Cancellation
 

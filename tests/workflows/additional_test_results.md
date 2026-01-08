@@ -1,8 +1,8 @@
-# Additional Test Scenarios - Wed Jan  7 12:03:00 PM UTC 2026
+# Additional Test Scenarios - Wed Jan  7 10:01:30 PM UTC 2026
 
 ## Approval Workflow (Prospect → Active)
 
-Contact approved: e90dc92a-8367-412e-b2f5-c25782d7861c, status changed to Active
+Contact approved: 7ae68ad4-071e-44e9-91c1-275ae295682c, status changed to Active
 
 ✅ PASS: Approval Workflow (Prospect → Active)
 
@@ -34,13 +34,13 @@ Contact details updated successfully
 
 ## MLS Staff Full Access
 
-MLS Staff can see all contacts (180)
+MLS Staff can see all contacts in tenant (30 contacts)
 
 ✅ PASS: MLS Staff Full Access
 
 ## Agent Data Isolation
 
-Agent sees only own contacts (24)
+Agent sees only own contacts (1)
 
 ✅ PASS: Agent Data Isolation
 

@@ -28,7 +28,7 @@ echo "- Assign MemberType to user via SSO Console" >> "$RESULTS_FILE"
 echo "- Verify MemberType stored in user_metadata" >> "$RESULTS_FILE"
 echo "- Verify MemberType reflected in member records" >> "$RESULTS_FILE"
 echo "- Update MemberType" >> "$RESULTS_FILE"
-echo "- Test all MemberTypes (Agent, Broker, OfficeManager, MLSStaff, Staff)" >> "$RESULTS_FILE"
+echo "- Test all MemberTypes (Broker, OfficeManager, MLSStaff)" >> "$RESULTS_FILE"
 echo "" >> "$RESULTS_FILE"
 
 log_test() {
@@ -81,9 +81,9 @@ CREATE_RESPONSE=$(curl -s -X POST "${SSO_SERVER_URL}/admin-users" \
     "password": "'${TEST_PASSWORD}'",
     "user_metadata": {
       "full_name": "MemberType Test User",
-      "member_type": "Agent"
+      "member_type": "Broker"
     },
-    "member_type": "Agent"
+    "member_type": "Broker"
   }')
 
 USER_ID=$(echo "$CREATE_RESPONSE" | jq -r '.id // empty' 2>/dev/null || echo "")
@@ -91,8 +91,8 @@ MEMBER_TYPE=$(echo "$CREATE_RESPONSE" | jq -r '.member_type // empty' 2>/dev/nul
 USER_METADATA=$(echo "$CREATE_RESPONSE" | jq -r '.user_metadata.member_type // empty' 2>/dev/null || echo "")
 
 if [ -n "$USER_ID" ] && [ "$USER_ID" != "null" ]; then
-  if [ "$MEMBER_TYPE" = "Agent" ] || [ "$USER_METADATA" = "Agent" ]; then
-    log_test "Create User with MemberType" "PASS" "Created user ${TEST_USER_EMAIL} with MemberType Agent (ID: $USER_ID)"
+  if [ "$MEMBER_TYPE" = "Broker" ] || [ "$USER_METADATA" = "Broker" ]; then
+    log_test "Create User with MemberType" "PASS" "Created user ${TEST_USER_EMAIL} with MemberType Broker (ID: $USER_ID)"
   else
     log_test "Create User with MemberType" "FAIL" "User created but MemberType not set correctly. Got: member_type=$MEMBER_TYPE, user_metadata.member_type=$USER_METADATA"
   fi
@@ -109,7 +109,7 @@ GET_USER_RESPONSE=$(curl -s -X GET "${SSO_SERVER_URL}/admin-users/${USER_ID}" \
 USER_METADATA_TYPE=$(echo "$GET_USER_RESPONSE" | jq -r '.user_metadata.member_type // empty' 2>/dev/null || echo "")
 RESPONSE_MEMBER_TYPE=$(echo "$GET_USER_RESPONSE" | jq -r '.member_type // empty' 2>/dev/null || echo "")
 
-if [ "$USER_METADATA_TYPE" = "Agent" ] || [ "$RESPONSE_MEMBER_TYPE" = "Agent" ]; then
+if [ "$USER_METADATA_TYPE" = "Broker" ] || [ "$RESPONSE_MEMBER_TYPE" = "Broker" ]; then
   log_test "Verify MemberType in user_metadata" "PASS" "MemberType correctly stored: user_metadata.member_type=$USER_METADATA_TYPE, member_type=$RESPONSE_MEMBER_TYPE"
 else
   log_test "Verify MemberType in user_metadata" "FAIL" "MemberType not found in user_metadata. Got: user_metadata.member_type=$USER_METADATA_TYPE, member_type=$RESPONSE_MEMBER_TYPE"
@@ -117,13 +117,13 @@ fi
 
 # Test 3: Verify MemberType in member record (create if doesn't exist)
 echo "Test 3: Verify MemberType in member record..."
-MEMBER_RECORD=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/members?user_id=eq.${USER_ID}&select=id,member_type,member_email" \
+MEMBER_RECORD=$(curl -s -X GET "${SUPABASE_URL}# /rest/v1/members? (table removed)user_id=eq.${USER_ID}&select=id,member_type,member_email" \
   -H "apikey: ${ANON_KEY}" \
   -H "Authorization: Bearer ${MANAGER_TOKEN}")
 
 MEMBER_TYPE_IN_DB=$(echo "$MEMBER_RECORD" | jq -r 'if type=="array" then .[0].member_type else .member_type end // empty' 2>/dev/null || echo "")
 
-if [ "$MEMBER_TYPE_IN_DB" = "Agent" ]; then
+if [ "$MEMBER_TYPE_IN_DB" = "Broker" ]; then
   log_test "Verify MemberType in member record" "PASS" "MemberType correctly stored in members table: $MEMBER_TYPE_IN_DB"
 else
   # Member record might not exist yet - create it
@@ -143,7 +143,7 @@ else
       -H "Prefer: return=representation" \
       -d '{
         "user_id": "'${USER_ID}'",
-        "member_type": "Agent",
+        "member_type": "Broker",
         "office_id": "'${OFFICE_ID}'",
         "tenant_id": "'${TENANT_ID}'",
         "member_email": "'${TEST_USER_EMAIL}'"
@@ -152,8 +152,8 @@ else
     CREATED_MEMBER_TYPE=$(echo "$CREATE_MEMBER_RESPONSE" | jq -r 'if type=="array" then .[0].member_type else .member_type end // empty' 2>/dev/null || echo "")
     ERROR_MSG=$(echo "$CREATE_MEMBER_RESPONSE" | jq -r '.error // .message // .code // empty' 2>/dev/null || echo "")
     
-    if [ "$CREATED_MEMBER_TYPE" = "Agent" ]; then
-      log_test "Verify MemberType in member record" "PASS" "Created member record with MemberType Agent"
+    if [ "$CREATED_MEMBER_TYPE" = "Broker" ]; then
+      log_test "Verify MemberType in member record" "PASS" "Created member record with MemberType Broker"
     elif echo "$ERROR_MSG" | grep -qi "already exists\|duplicate\|unique\|23505"; then
       log_test "Verify MemberType in member record" "PASS" "Member record already exists (expected)"
     elif echo "$ERROR_MSG" | grep -qi "row-level security\|42501"; then
@@ -173,7 +173,7 @@ else
           -H "Prefer: return=representation" \
           -d '{
             "user_id": "'${USER_ID}'",
-            "member_type": "Agent",
+            "member_type": "Broker",
             "office_id": "'${OFFICE_ID}'",
             "tenant_id": "'${TENANT_ID}'",
             "member_email": "'${TEST_USER_EMAIL}'"
@@ -181,7 +181,7 @@ else
         
         OWN_MEMBER_TYPE=$(echo "$CREATE_OWN_MEMBER" | jq -r 'if type=="array" then .[0].member_type else .member_type end // empty' 2>/dev/null || echo "")
         
-        if [ "$OWN_MEMBER_TYPE" = "Agent" ]; then
+        if [ "$OWN_MEMBER_TYPE" = "Broker" ]; then
           log_test "Verify MemberType in member record" "PASS" "Created member record via user's own token"
         else
           log_test "Verify MemberType in member record" "SKIP" "RLS policy prevents admin from creating member records (expected behavior)"
@@ -216,7 +216,7 @@ else
 fi
 
 # Verify update in member record
-MEMBER_RECORD_UPDATED=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/members?user_id=eq.${USER_ID}&select=member_type" \
+MEMBER_RECORD_UPDATED=$(curl -s -X GET "${SUPABASE_URL}# /rest/v1/members? (table removed)user_id=eq.${USER_ID}&select=member_type" \
   -H "apikey: ${ANON_KEY}" \
   -H "Authorization: Bearer ${MANAGER_TOKEN}")
 
@@ -226,7 +226,7 @@ if [ "$MEMBER_TYPE_UPDATED" = "Broker" ]; then
   log_test "Verify MemberType Update in member record" "PASS" "MemberType updated in members table: $MEMBER_TYPE_UPDATED"
 else
   # Try to update member record directly
-  UPDATE_MEMBER_RESPONSE=$(curl -s -X PATCH "${SUPABASE_URL}/rest/v1/members?user_id=eq.${USER_ID}" \
+  UPDATE_MEMBER_RESPONSE=$(curl -s -X PATCH "${SUPABASE_URL}# /rest/v1/members? (table removed)user_id=eq.${USER_ID}" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${MANAGER_TOKEN}" \
     -H "Content-Type: application/json" \
@@ -244,7 +244,8 @@ fi
 
 # Test 5: Test all MemberTypes
 echo "Test 5: Test all MemberTypes..."
-MEMBER_TYPES=("Agent" "Broker" "OfficeManager" "MLSStaff" "Staff")
+# Valid member types: Broker, OfficeManager, MLSStaff (Agent and Staff are not valid in the UI)
+MEMBER_TYPES=("Broker" "OfficeManager" "MLSStaff")
 ALL_TYPES_PASS=true
 
 # Get office info for member record creation
@@ -328,7 +329,7 @@ for MT in "${MEMBER_TYPES[@]}"; do
 done
 
 if [ "$ALL_TYPES_PASS" = true ]; then
-  log_test "Test All MemberTypes" "PASS" "All MemberTypes (Agent, Broker, OfficeManager, MLSStaff, Staff) can be assigned"
+  log_test "Test All MemberTypes" "PASS" "All MemberTypes (Broker, OfficeManager, MLSStaff) can be assigned"
 else
   log_test "Test All MemberTypes" "FAIL" "Some MemberTypes failed to be assigned"
 fi

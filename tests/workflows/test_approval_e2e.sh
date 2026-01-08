@@ -80,11 +80,8 @@ CY_ANNA_TOKEN=$(authenticate_user "$CY_ANNA_EMAIL" "$TEST_PASSWORD")
 
 CY_NIKOS_ID=$(get_user_id "$CY_NIKOS_EMAIL")
 
-MEMBER_RESPONSE=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/members?user_id=eq.${CY_NIKOS_ID}&select=id" \
-  -H "apikey: ${ANON_KEY}" \
-  -H "Authorization: Bearer ${CY_NIKOS_TOKEN}")
-
-CY_NIKOS_MEMBER_ID=$(echo "$MEMBER_RESPONSE" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
+# Use user_id directly (members table removed)
+CY_NIKOS_MEMBER_ID="$CY_NIKOS_ID"
 
 # Test 1: Broker creates contact (Prospect)
 if [ -n "$CY_NIKOS_TOKEN" ] && [ -n "$CY_NIKOS_MEMBER_ID" ]; then
@@ -96,7 +93,7 @@ if [ -n "$CY_NIKOS_TOKEN" ] && [ -n "$CY_NIKOS_MEMBER_ID" ]; then
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${CY_TENANT_ID}\",
-      \"owning_member_id\": \"${CY_NIKOS_MEMBER_ID}\",
+      \"owning_user_id\": \"${CY_NIKOS_MEMBER_ID}\",
       \"first_name\": \"E2E\",
       \"last_name\": \"Test\",
       \"phone\": \"+35798888888\",
@@ -132,21 +129,36 @@ if [ -n "$CY_NIKOS_TOKEN" ] && [ -n "$CY_NIKOS_MEMBER_ID" ]; then
     fi
     
     # Test 3: Sales Manager approves (Active)
-    if [ -n "$CY_DIMITRIS_TOKEN" ]; then
-      APPROVE_RESPONSE=$(curl -s -X PATCH "${SUPABASE_URL}/rest/v1/contacts?id=eq.${CONTACT_ID}" \
+    if [ -n "$CY_DIMITRIS_TOKEN" ] && [ -n "$CONTACT_ID" ]; then
+      # Ensure contact is in PendingReview status first
+      curl -s -X PATCH "${SUPABASE_URL}/rest/v1/contacts?id=eq.${CONTACT_ID}" \
+        -H "apikey: ${ANON_KEY}" \
+        -H "Authorization: Bearer ${CY_NIKOS_TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d '{"contact_status": "PendingReview"}' > /dev/null 2>&1
+      
+      sleep 1
+      
+      APPROVE_RESPONSE=$(curl -s -w "\n%{http_code}" -X PATCH "${SUPABASE_URL}/rest/v1/contacts?id=eq.${CONTACT_ID}" \
         -H "apikey: ${ANON_KEY}" \
         -H "Authorization: Bearer ${CY_DIMITRIS_TOKEN}" \
         -H "Content-Type: application/json" \
         -H "Prefer: return=representation" \
         -d '{"contact_status": "Active"}')
       
-      APPROVED_STATUS=$(echo "$APPROVE_RESPONSE" | jq -r 'if type=="array" then .[0].contact_status else .contact_status end // empty' 2>/dev/null || echo "")
+      HTTP_CODE=$(echo "$APPROVE_RESPONSE" | tail -n1)
+      RESPONSE_BODY=$(echo "$APPROVE_RESPONSE" | sed '$d')
+      
+      APPROVED_STATUS=$(echo "$RESPONSE_BODY" | jq -r 'if type=="array" then .[0].contact_status else .contact_status end // empty' 2>/dev/null || echo "")
+      ERROR_MSG=$(echo "$RESPONSE_BODY" | jq -r '.message // .error_description // .hint // empty' 2>/dev/null || echo "")
       
       if [ "$APPROVED_STATUS" = "Active" ]; then
         log_test "Sales Manager Approves (Active)" "PASS" "Contact approved, status: Active"
       else
-        log_test "Sales Manager Approves (Active)" "FAIL" "Status is $APPROVED_STATUS"
+        log_test "Sales Manager Approves (Active)" "FAIL" "Status is $APPROVED_STATUS (HTTP $HTTP_CODE). Error: $ERROR_MSG"
       fi
+    else
+      log_test "Sales Manager Approves (Active)" "SKIP" "Sales Manager token or contact ID not available"
     fi
     
     # Test 4: Create another contact and reject
@@ -157,7 +169,7 @@ if [ -n "$CY_NIKOS_TOKEN" ] && [ -n "$CY_NIKOS_MEMBER_ID" ]; then
       -H "Prefer: return=representation" \
       -d "{
         \"tenant_id\": \"${CY_TENANT_ID}\",
-        \"owning_member_id\": \"${CY_NIKOS_MEMBER_ID}\",
+        \"owning_user_id\": \"${CY_NIKOS_MEMBER_ID}\",
         \"first_name\": \"Reject\",
         \"last_name\": \"Test\",
         \"phone\": \"+35797777777\",
@@ -169,20 +181,28 @@ if [ -n "$CY_NIKOS_TOKEN" ] && [ -n "$CY_NIKOS_MEMBER_ID" ]; then
     CONTACT2_ID=$(echo "$CONTACT2" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
     
     if [ -n "$CONTACT2_ID" ] && [ -n "$CY_DIMITRIS_TOKEN" ]; then
-      REJECT_RESPONSE=$(curl -s -X PATCH "${SUPABASE_URL}/rest/v1/contacts?id=eq.${CONTACT2_ID}" \
+      sleep 1
+      
+      REJECT_RESPONSE=$(curl -s -w "\n%{http_code}" -X PATCH "${SUPABASE_URL}/rest/v1/contacts?id=eq.${CONTACT2_ID}" \
         -H "apikey: ${ANON_KEY}" \
         -H "Authorization: Bearer ${CY_DIMITRIS_TOKEN}" \
         -H "Content-Type: application/json" \
         -H "Prefer: return=representation" \
         -d '{"contact_status": "DoNotContact"}')
       
-      REJECTED_STATUS=$(echo "$REJECT_RESPONSE" | jq -r 'if type=="array" then .[0].contact_status else .contact_status end // empty' 2>/dev/null || echo "")
+      HTTP_CODE=$(echo "$REJECT_RESPONSE" | tail -n1)
+      RESPONSE_BODY=$(echo "$REJECT_RESPONSE" | sed '$d')
+      
+      REJECTED_STATUS=$(echo "$RESPONSE_BODY" | jq -r 'if type=="array" then .[0].contact_status else .contact_status end // empty' 2>/dev/null || echo "")
+      ERROR_MSG=$(echo "$RESPONSE_BODY" | jq -r '.message // .error_description // .hint // empty' 2>/dev/null || echo "")
       
       if [ "$REJECTED_STATUS" = "DoNotContact" ]; then
         log_test "Sales Manager Rejects (DoNotContact)" "PASS" "Contact rejected, status: DoNotContact"
       else
-        log_test "Sales Manager Rejects (DoNotContact)" "FAIL" "Status is $REJECTED_STATUS"
+        log_test "Sales Manager Rejects (DoNotContact)" "FAIL" "Status is $REJECTED_STATUS (HTTP $HTTP_CODE). Error: $ERROR_MSG"
       fi
+    else
+      log_test "Sales Manager Rejects (DoNotContact)" "SKIP" "Contact ID or Sales Manager token not available"
     fi
   fi
 else

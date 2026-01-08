@@ -96,8 +96,8 @@ else
   log_test "app_permissions Table Access" "PASS" "app_permissions table is accessible"
 fi
 
-# Test 2: Create permission for Agent member type
-echo "Test 2: Create permission for Agent member type..."
+# Test 2: Create permission for Broker member type
+echo "Test 2: Create permission for Broker member type..."
 CREATE_PERM_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/app_permissions" \
   -H "apikey: ${ANON_KEY}" \
   -H "Authorization: Bearer ${MANAGER_TOKEN}" \
@@ -105,7 +105,7 @@ CREATE_PERM_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/app_permissions"
   -H "Prefer: return=representation" \
   -d '{
     "app_id": "agency-portal",
-    "member_type": "Agent",
+    "member_type": "Broker",
     "permission_type": "page",
     "permission_key": "dashboard",
     "is_allowed": true
@@ -115,27 +115,27 @@ PERM_ID=$(echo "$CREATE_PERM_RESPONSE" | jq -r 'if type=="array" then .[0].id el
 PERM_ERROR=$(echo "$CREATE_PERM_RESPONSE" | jq -r '.error // .message // empty' 2>/dev/null || echo "")
 
 if [ -n "$PERM_ID" ] && [ "$PERM_ID" != "null" ] && [ -z "$PERM_ERROR" ]; then
-  log_test "Create Permission for Agent" "PASS" "Created permission: app_id=agency-portal, member_type=Agent, permission_type=page, permission_key=dashboard (ID: $PERM_ID)"
+  log_test "Create Permission for Broker" "PASS" "Created permission: app_id=agency-portal, member_type=Broker, permission_type=page, permission_key=dashboard (ID: $PERM_ID)"
 else
   if echo "$PERM_ERROR" | grep -qi "already exists\|duplicate\|unique"; then
-    log_test "Create Permission for Agent" "PASS" "Permission already exists (expected for duplicate)"
+    log_test "Create Permission for Broker" "PASS" "Permission already exists (expected for duplicate)"
   else
-    log_test "Create Permission for Agent" "FAIL" "Failed to create permission: $PERM_ERROR"
+    log_test "Create Permission for Broker" "FAIL" "Failed to create permission: $PERM_ERROR"
   fi
 fi
 
 # Test 3: Query permissions for specific MemberType
-echo "Test 3: Query permissions for Agent MemberType..."
-AGENT_PERMS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/app_permissions?app_id=eq.agency-portal&member_type=eq.Agent&select=*" \
+echo "Test 3: Query permissions for Broker MemberType..."
+BROKER_QUERY_PERMS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/app_permissions?app_id=eq.agency-portal&member_type=eq.Broker&select=*" \
   -H "apikey: ${ANON_KEY}" \
   -H "Authorization: Bearer ${MANAGER_TOKEN}")
 
-AGENT_PERM_COUNT=$(echo "$AGENT_PERMS" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
+BROKER_PERM_COUNT=$(echo "$BROKER_QUERY_PERMS" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
 
-if [ "$AGENT_PERM_COUNT" -ge 0 ]; then
-  log_test "Query Permissions for Agent" "PASS" "Found $AGENT_PERM_COUNT permissions for Agent in agency-portal"
+if [ "$BROKER_PERM_COUNT" -ge 0 ]; then
+  log_test "Query Permissions for Broker" "PASS" "Found $BROKER_PERM_COUNT permissions for Broker in agency-portal"
 else
-  log_test "Query Permissions for Agent" "FAIL" "Failed to query permissions: $AGENT_PERMS"
+  log_test "Query Permissions for Broker" "FAIL" "Failed to query permissions: $BROKER_QUERY_PERMS"
 fi
 
 # Test 4: Create page permission for Broker
@@ -173,7 +173,7 @@ ACTION_PERM_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/app_permissions"
   -H "Prefer: return=representation" \
   -d '{
     "app_id": "agency-portal",
-    "member_type": "Agent",
+    "member_type": "Broker",
     "permission_type": "action",
     "permission_key": "create_listing",
     "is_allowed": true
@@ -199,7 +199,7 @@ DENIED_PERM_RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/app_permissions"
   -H "Prefer: return=representation" \
   -d '{
     "app_id": "agency-portal",
-    "member_type": "Agent",
+    "member_type": "Broker",
     "permission_type": "page",
     "permission_key": "admin_settings",
     "is_allowed": false
@@ -213,7 +213,7 @@ if [ -n "$DENIED_PERM_ID" ] && [ "$DENIED_PERM_ID" != "null" ] && [ "$DENIED_IS_
   log_test "Create Denied Permission" "PASS" "Created denied permission: admin_settings (ID: $DENIED_PERM_ID, is_allowed=false)"
 else
   # Permission may already exist - fetch or verify it
-  EXISTING_PERM=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/app_permissions?app_id=eq.agency-portal&member_type=eq.Agent&permission_type=eq.page&permission_key=eq.admin_settings&select=id,is_allowed" \
+  EXISTING_PERM=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/app_permissions?app_id=eq.agency-portal&member_type=eq.Broker&permission_type=eq.page&permission_key=eq.admin_settings&select=id,is_allowed" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${MANAGER_TOKEN}")
   
@@ -262,7 +262,7 @@ for APP in "${APPS[@]}"; do
     -H "Prefer: return=representation" \
     -d '{
       "app_id": "'${APP}'",
-      "member_type": "Agent",
+      "member_type": "Broker",
       "permission_type": "page",
       "permission_key": "dashboard",
       "is_allowed": true
@@ -289,7 +289,8 @@ fi
 
 # Test 8: Test permissions for all MemberTypes
 echo "Test 8: Test permissions for all MemberTypes..."
-MEMBER_TYPES=("Agent" "Broker" "OfficeManager" "MLSStaff" "Staff")
+# Valid member types: Broker, OfficeManager, MLSStaff (Agent and Staff are not valid in the UI)
+MEMBER_TYPES=("Broker" "OfficeManager" "MLSStaff")
 ALL_MEMBER_TYPES_PASS=true
 
 for MT in "${MEMBER_TYPES[@]}"; do
@@ -327,14 +328,14 @@ fi
 
 # Test 9: Query permissions by app_id and member_type
 echo "Test 9: Query permissions by app_id and member_type..."
-QUERY_PERMS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/app_permissions?app_id=eq.agency-portal&member_type=eq.Agent&select=permission_type,permission_key,is_allowed" \
+QUERY_PERMS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/app_permissions?app_id=eq.agency-portal&member_type=eq.Broker&select=permission_type,permission_key,is_allowed" \
   -H "apikey: ${ANON_KEY}" \
   -H "Authorization: Bearer ${MANAGER_TOKEN}")
 
 QUERY_COUNT=$(echo "$QUERY_PERMS" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
 
 if [ "$QUERY_COUNT" -ge 0 ]; then
-  log_test "Query Permissions by App and MemberType" "PASS" "Found $QUERY_COUNT permissions for Agent in agency-portal"
+  log_test "Query Permissions by App and MemberType" "PASS" "Found $QUERY_COUNT permissions for Broker in agency-portal"
 else
   log_test "Query Permissions by App and MemberType" "FAIL" "Failed to query permissions"
 fi
@@ -343,7 +344,7 @@ fi
 echo "Test 10: Update permission..."
 # If DENIED_PERM_ID is empty, find any permission to update
 if [ -z "$DENIED_PERM_ID" ] || [ "$DENIED_PERM_ID" = "null" ]; then
-  FIND_PERM=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/app_permissions?app_id=eq.agency-portal&member_type=eq.Agent&select=id,is_allowed&limit=1" \
+  FIND_PERM=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/app_permissions?app_id=eq.agency-portal&member_type=eq.Broker&select=id,is_allowed&limit=1" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${MANAGER_TOKEN}")
   DENIED_PERM_ID=$(echo "$FIND_PERM" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")

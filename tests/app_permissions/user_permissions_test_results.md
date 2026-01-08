@@ -1,4 +1,4 @@
-# User Permissions & Visibility Tests - Wed Jan  7 12:03:19 PM UTC 2026
+# User Permissions & Visibility Tests - Wed Jan  7 10:01:50 PM UTC 2026
 
 ## Overview
 
@@ -15,13 +15,13 @@ This test suite validates:
 
 ### Create User
 
-Successfully created user test.automation.1767787399@sharpsir.group (ID: 4b9cac0e-d8fe-4db1-a3cf-c5780bfe6d1b)
+Successfully created user test.automation.1767823310@sharpsir.group (ID: 9835dbc4-e0a6-46d1-85a5-644de4a18405)
 
 **Result:** ✅ PASS
 
 ### Read User Details
 
-Successfully retrieved user details for test.automation.1767787399@sharpsir.group
+Successfully retrieved user details for test.automation.1767823310@sharpsir.group
 
 **Result:** ✅ PASS
 
@@ -39,7 +39,7 @@ Successfully updated display name
 
 ### List All Users
 
-Successfully listed 74 users
+Successfully listed 25 users
 
 **Result:** ✅ PASS
 
@@ -48,7 +48,7 @@ Successfully listed 74 users
 
 ### Grant Permission
 
-Successfully granted 'rw_own' permission (ID: c1f0d2ff-ba68-4be3-a63c-ca982fec4610)
+Successfully granted 'rw_own' permission (ID: 89eca155-b494-4106-95e9-d6f0d5d2c1fa)
 
 **Result:** ✅ PASS
 
@@ -83,7 +83,7 @@ Broker 2 sees 0 contacts (only their own via RLS)
 
 ### Broker Data Isolation
 
-Broker 1 sees 0 members, Broker 2 sees 0 members (RLS isolation active)
+Broker 1 sees 0 contacts, Broker 2 sees 0 contacts (RLS isolation active)
 
 **Result:** ✅ PASS
 
@@ -104,21 +104,21 @@ Office Manager sees 0 contacts (full tenant access via RLS)
 
 **Result:** ✅ PASS
 
-### MLS Staff Sees All Members
+### MLS Staff Sees All Contacts
 
-MLS Staff sees 0 tenant members
+MLS Staff sees 0 tenant contacts
 
 **Result:** ✅ PASS
 
-### Office Manager Sees All Members
+### Office Manager Sees All Contacts
 
-Office Manager sees 0 tenant members
+Office Manager sees 0 tenant contacts
 
 **Result:** ✅ PASS
 
 ### Manager vs Broker Visibility
 
-MLS Staff sees 0 members, Broker sees 0 (Manager has broader access)
+MLS Staff sees 0 contacts, Broker sees 0 (Manager has broader access)
 
 **Result:** ✅ PASS
 

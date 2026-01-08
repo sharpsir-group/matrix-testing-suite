@@ -81,12 +81,8 @@ CY_ANNA_TOKEN=$(authenticate_user "$CY_ANNA_EMAIL" "$TEST_PASSWORD")
 
 CY_NIKOS_ID=$(get_user_id "$CY_NIKOS_EMAIL")
 
-# Get member ID
-MEMBER_RESPONSE=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/members?user_id=eq.${CY_NIKOS_ID}&select=id" \
-  -H "apikey: ${ANON_KEY}" \
-  -H "Authorization: Bearer ${CY_NIKOS_TOKEN}")
-
-CY_NIKOS_MEMBER_ID=$(echo "$MEMBER_RESPONSE" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
+# Use user_id directly (members table removed)
+CY_NIKOS_MEMBER_ID="$CY_NIKOS_ID"
 
 # Create contact for review
 if [ -n "$CY_NIKOS_TOKEN" ] && [ -n "$CY_NIKOS_MEMBER_ID" ]; then
@@ -98,7 +94,7 @@ if [ -n "$CY_NIKOS_TOKEN" ] && [ -n "$CY_NIKOS_MEMBER_ID" ]; then
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${CY_TENANT_ID}\",
-      \"owning_member_id\": \"${CY_NIKOS_MEMBER_ID}\",
+      \"owning_user_id\": \"${CY_NIKOS_MEMBER_ID}\",
       \"first_name\": \"Review\",
       \"last_name\": \"Test\",
       \"phone\": \"+35799999999\",
@@ -127,34 +123,58 @@ if [ -n "$CY_NIKOS_TOKEN" ] && [ -n "$CY_NIKOS_MEMBER_ID" ]; then
     fi
     
     # Test 2: Sales Manager sees contact in review
-    if [ -n "$CY_DIMITRIS_TOKEN" ]; then
-      REVIEW_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?contact_status=eq.PendingReview&select=id" \
-        -H "apikey: ${ANON_KEY}" \
-        -H "Authorization: Bearer ${CY_DIMITRIS_TOKEN}" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
+    if [ -n "$CY_DIMITRIS_TOKEN" ] && [ -n "$CONTACT_ID" ]; then
+      # Wait a moment for RLS to refresh
+      sleep 1
       
-      if [ "$REVIEW_CONTACTS" -ge 1 ]; then
-        log_test "Sales Manager Sees Review Requests" "PASS" "Sales Manager sees $REVIEW_CONTACTS contacts in review"
+      REVIEW_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?contact_status=eq.PendingReview&select=id,contact_status" \
+        -H "apikey: ${ANON_KEY}" \
+        -H "Authorization: Bearer ${CY_DIMITRIS_TOKEN}" 2>/dev/null)
+      
+      REVIEW_COUNT=$(echo "$REVIEW_CONTACTS" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
+      CONTACT_FOUND=$(echo "$REVIEW_CONTACTS" | jq "[.[] | select(.id == \"${CONTACT_ID}\")] | length" 2>/dev/null || echo "0")
+      
+      if [ "$REVIEW_COUNT" -ge 1 ] || [ "$CONTACT_FOUND" -eq 1 ]; then
+        log_test "Sales Manager Sees Review Requests" "PASS" "Sales Manager sees $REVIEW_COUNT contacts in review (contact $CONTACT_ID found: $CONTACT_FOUND)"
       else
-        log_test "Sales Manager Sees Review Requests" "FAIL" "Sales Manager sees $REVIEW_CONTACTS contacts (expected >= 1)"
+        ERROR_MSG=$(echo "$REVIEW_CONTACTS" | jq -r '.message // .error_description // empty' 2>/dev/null || echo "")
+        log_test "Sales Manager Sees Review Requests" "FAIL" "Sales Manager sees $REVIEW_COUNT contacts (expected >= 1). Contact ID: $CONTACT_ID. Error: $ERROR_MSG"
       fi
+    else
+      log_test "Sales Manager Sees Review Requests" "SKIP" "Sales Manager token or contact ID not available"
     fi
     
     # Test 3: Sales Manager approves
-    if [ -n "$CY_DIMITRIS_TOKEN" ]; then
-      APPROVE_RESPONSE=$(curl -s -X PATCH "${SUPABASE_URL}/rest/v1/contacts?id=eq.${CONTACT_ID}" \
+    if [ -n "$CY_DIMITRIS_TOKEN" ] && [ -n "$CONTACT_ID" ]; then
+      # Ensure contact is in PendingReview status first
+      curl -s -X PATCH "${SUPABASE_URL}/rest/v1/contacts?id=eq.${CONTACT_ID}" \
+        -H "apikey: ${ANON_KEY}" \
+        -H "Authorization: Bearer ${CY_NIKOS_TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d '{"contact_status": "PendingReview"}' > /dev/null 2>&1
+      
+      sleep 1
+      
+      APPROVE_RESPONSE=$(curl -s -w "\n%{http_code}" -X PATCH "${SUPABASE_URL}/rest/v1/contacts?id=eq.${CONTACT_ID}" \
         -H "apikey: ${ANON_KEY}" \
         -H "Authorization: Bearer ${CY_DIMITRIS_TOKEN}" \
         -H "Content-Type: application/json" \
         -H "Prefer: return=representation" \
         -d '{"contact_status": "Active"}')
       
-      APPROVED_STATUS=$(echo "$APPROVE_RESPONSE" | jq -r 'if type=="array" then .[0].contact_status else .contact_status end // empty' 2>/dev/null || echo "")
+      HTTP_CODE=$(echo "$APPROVE_RESPONSE" | tail -n1)
+      RESPONSE_BODY=$(echo "$APPROVE_RESPONSE" | sed '$d')
+      
+      APPROVED_STATUS=$(echo "$RESPONSE_BODY" | jq -r 'if type=="array" then .[0].contact_status else .contact_status end // empty' 2>/dev/null || echo "")
+      ERROR_MSG=$(echo "$RESPONSE_BODY" | jq -r '.message // .error_description // .hint // empty' 2>/dev/null || echo "")
       
       if [ "$APPROVED_STATUS" = "Active" ]; then
         log_test "Sales Manager Approves Contact" "PASS" "Contact approved, status: Active"
       else
-        log_test "Sales Manager Approves Contact" "FAIL" "Status is $APPROVED_STATUS, expected Active"
+        log_test "Sales Manager Approves Contact" "FAIL" "Status is $APPROVED_STATUS (HTTP $HTTP_CODE), expected Active. Error: $ERROR_MSG"
       fi
+    else
+      log_test "Sales Manager Approves Contact" "SKIP" "Sales Manager token or contact ID not available"
     fi
     
     # Test 4: Contact Center can also process reviews

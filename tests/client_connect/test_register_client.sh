@@ -92,14 +92,9 @@ get_member_id() {
   local token="$1"
   local user_id="$2"
   
-  # Use service role key if available, otherwise use the user's token
-  AUTH_HEADER="${SERVICE_ROLE_KEY:-$token}"
-  
-  MEMBER_RESPONSE=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/members?user_id=eq.${user_id}&select=id,member_type,office_id" \
-    -H "apikey: ${ANON_KEY}" \
-    -H "Authorization: Bearer ${AUTH_HEADER}")
-  
-  echo "$MEMBER_RESPONSE" | jq -r 'if type=="array" then .[0].id // empty else .id // empty end' 2>/dev/null || echo ""
+  # Members table removed - user_id is now used directly
+  # Return user_id as the "member_id" (they're the same now)
+  echo "$user_id"
 }
 
 echo "=== Register Client Functional Tests ==="
@@ -150,7 +145,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"first_name\": \"John\",
       \"last_name\": \"Doe\",
       \"email\": \"john.doe.${TIMESTAMP}@example.com\",
@@ -200,7 +195,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"first_name\": \"Jane\",
       \"last_name\": \"Smith\",
       \"phone\": \"+35799234567\",
@@ -232,7 +227,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"first_name\": \"Alice\",
       \"last_name\": \"Johnson\",
       \"email\": \"alice.${TIMESTAMP}@example.com\",
@@ -274,7 +269,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"first_name\": \"Bob\",
       \"last_name\": \"Williams\",
       \"email\": \"bob.${TIMESTAMP}@example.com\",
@@ -313,7 +308,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Content-Type: application/json" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"first_name\": \"Test\"
     }")
   
@@ -340,7 +335,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"first_name\": \"Owned\",
       \"last_name\": \"Client\",
       \"email\": \"owned.${TIMESTAMP}@example.com\",
@@ -353,12 +348,12 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
   OWNED_CLIENT_ID=$(echo "$OWNED_CLIENT" | jq -r 'if type=="array" then .[0].id else .id end // empty' 2>/dev/null || echo "")
   
   if [ -n "$OWNED_CLIENT_ID" ] && [ "$OWNED_CLIENT_ID" != "null" ]; then
-    # Verify owning_member_id matches broker1
-    VERIFY_OWNER=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?id=eq.${OWNED_CLIENT_ID}&select=owning_member_id" \
+    # Verify owning_user_id matches broker1
+    VERIFY_OWNER=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?id=eq.${OWNED_CLIENT_ID}&select=owning_user_id" \
       -H "apikey: ${ANON_KEY}" \
       -H "Authorization: Bearer ${BROKER1_TOKEN}")
     
-    OWNER_ID=$(echo "$VERIFY_OWNER" | jq -r 'if type=="array" then .[0].owning_member_id else .owning_member_id end // empty')
+    OWNER_ID=$(echo "$VERIFY_OWNER" | jq -r 'if type=="array" then .[0].owning_user_id else .owning_user_id end // empty')
     
     if [ "$OWNER_ID" = "$BROKER1_MEMBER_ID" ]; then
       log_test "Register Client - Data Isolation" "PASS" "Client correctly owned by broker1 (Member ID: $OWNER_ID)"
@@ -385,7 +380,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"first_name\": \"Charlie\",
       \"last_name\": \"Brown\",
       \"email\": \"charlie.${TIMESTAMP}@example.com\",
@@ -421,7 +416,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"first_name\": \"David\",
       \"last_name\": \"Miller\",
       \"email\": \"david.${TIMESTAMP}@example.com\",
@@ -493,7 +488,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER2_TOKEN" ] && [ -n "$BROKER2_MEMBER_I
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER2_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER2_MEMBER_ID}\",
       \"first_name\": \"Elena\",
       \"last_name\": \"Client\",
       \"phone\": \"+35799999999\",
@@ -565,7 +560,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"first_name\": \"Review\",
       \"last_name\": \"Test\",
       \"phone\": \"+35798888888\",

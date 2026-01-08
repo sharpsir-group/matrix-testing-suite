@@ -48,12 +48,10 @@ authenticate() {
 }
 
 get_member_id() {
+  # DEPRECATED: Members table removed - user_id is now used directly
   local token="$1"
   local user_id="$2"
-  local member_resp=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/members?user_id=eq.${user_id}&select=id" \
-    -H "apikey: ${ANON_KEY}" \
-    -H "Authorization: Bearer ${token}")
-  echo "$member_resp" | jq -r 'if type=="array" then .[0].id else .id end // empty'
+  echo "$user_id"
 }
 
 BROKER1_TOKEN=$(authenticate "cy.nikos.papadopoulos@cyprus-sothebysrealty.com")
@@ -82,7 +80,7 @@ PROSPECT_CONTACT=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/contacts" \
   -H "Prefer: return=representation" \
   -d "{
     \"tenant_id\": \"${TENANT_ID}\",
-    \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+    \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
     \"first_name\": \"Approval\",
     \"last_name\": \"Test\",
     \"email\": \"approval.test@example.com\",
@@ -157,7 +155,7 @@ MEETING=$(curl -s -X POST "${SUPABASE_URL}/rest/v1/entity_events" \
   -H "Prefer: return=representation" \
   -d "{
     \"tenant_id\": \"${TENANT_ID}\",
-    \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+    \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
     \"event_type\": \"BuyerShowing\",
     \"event_status\": \"Scheduled\",
     \"event_datetime\": \"$(date -u -Iseconds --date='yesterday 10:00')\",
@@ -235,16 +233,18 @@ MLS_AUTH=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
 MLS_TOKEN=$(echo "$MLS_AUTH" | jq -r '.access_token // empty' 2>/dev/null || echo "")
 
 if [ -n "$MLS_TOKEN" ] && [ "$MLS_TOKEN" != "null" ]; then
-  MLS_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?select=id" \
+  # Add tenant_id filter to ensure we're checking within the same tenant
+  MLS_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?tenant_id=eq.${TENANT_ID}&select=id" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${MLS_TOKEN}")
   
   MLS_COUNT=$(echo "$MLS_CONTACTS" | jq 'if type=="array" then length else 0 end' 2>/dev/null || echo "0")
+  ERROR_MSG=$(echo "$MLS_CONTACTS" | jq -r '.message // .error_description // empty' 2>/dev/null || echo "")
   
   if [ "$MLS_COUNT" -ge 1 ]; then
-    log_test "MLS Staff Full Access" "PASS" "MLS Staff can see all contacts ($MLS_COUNT)"
+    log_test "MLS Staff Full Access" "PASS" "MLS Staff can see all contacts in tenant ($MLS_COUNT contacts)"
   else
-    log_test "MLS Staff Full Access" "FAIL" "MLS Staff sees $MLS_COUNT contacts (expected more)"
+    log_test "MLS Staff Full Access" "FAIL" "MLS Staff sees $MLS_COUNT contacts (expected >= 1). Error: $ERROR_MSG"
   fi
 else
   # MLS Staff user doesn't exist - skip test but note it
@@ -252,44 +252,44 @@ else
   log_test "MLS Staff Full Access" "SKIP" "MLS Staff user not available (create mlsstaff.test@sharpsir.group to enable)"
 fi
 
-# Test 7: Agent Access - Can only see own data
-echo "Test 7: Agent Access..."
+# Test 7: Broker Access - Can only see own data (standard broker with rw_own permissions)
+echo "Test 7: Broker Own Data Access..."
 sleep 2  # Delay to avoid rate limits
-AGENT_EMAIL="cy.elena.konstantinou@cyprus-sothebysrealty.com"
-AGENT_TOKEN=""
+BROKER_RW_OWN_EMAIL="cy.elena.konstantinou@cyprus-sothebysrealty.com"
+BROKER_RW_OWN_TOKEN=""
 for i in 1 2 3; do
-  AGENT_TOKEN=$(authenticate "$AGENT_EMAIL")
-  if [ -n "$AGENT_TOKEN" ] && [ "$AGENT_TOKEN" != "null" ]; then
+  BROKER_RW_OWN_TOKEN=$(authenticate "$BROKER_RW_OWN_EMAIL")
+  if [ -n "$BROKER_RW_OWN_TOKEN" ] && [ "$BROKER_RW_OWN_TOKEN" != "null" ]; then
     break
   fi
   sleep $i
 done
 
-if [ -n "$AGENT_TOKEN" ] && [ "$AGENT_TOKEN" != "null" ]; then
-  AGENT_USER_ID=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
+if [ -n "$BROKER_RW_OWN_TOKEN" ] && [ "$BROKER_RW_OWN_TOKEN" != "null" ]; then
+  BROKER_RW_OWN_USER_ID=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/token?grant_type=password" \
     -H "apikey: ${ANON_KEY}" \
     -H "Content-Type: application/json" \
-    -d '{"email":"'${AGENT_EMAIL}'","password":"'${TEST_PASSWORD}'"}' | jq -r '.user.id')
-  AGENT_MEMBER_ID=$(get_member_id "$AGENT_TOKEN" "$AGENT_USER_ID")
+    -d '{"email":"'${BROKER_RW_OWN_EMAIL}'","password":"'${TEST_PASSWORD}'"}' | jq -r '.user.id')
+  BROKER_RW_OWN_MEMBER_ID=$(get_member_id "$BROKER_RW_OWN_TOKEN" "$BROKER_RW_OWN_USER_ID")
   
-  if [ -n "$AGENT_TOKEN" ] && [ "$AGENT_TOKEN" != "null" ]; then
-  AGENT_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?select=id,owning_member_id" \
+  if [ -n "$BROKER_RW_OWN_TOKEN" ] && [ "$BROKER_RW_OWN_TOKEN" != "null" ]; then
+  BROKER_RW_OWN_CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?select=id,owning_user_id" \
     -H "apikey: ${ANON_KEY}" \
-    -H "Authorization: Bearer ${AGENT_TOKEN}")
+    -H "Authorization: Bearer ${BROKER_RW_OWN_TOKEN}")
   
-  AGENT_COUNT=$(echo "$AGENT_CONTACTS" | jq 'if type=="array" then length else 0 end')
-  AGENT_OWN=$(echo "$AGENT_CONTACTS" | jq "[.[] | select(.owning_member_id == \"${AGENT_MEMBER_ID}\")] | length" 2>/dev/null || echo "0")
+  BROKER_RW_OWN_COUNT=$(echo "$BROKER_RW_OWN_CONTACTS" | jq 'if type=="array" then length else 0 end')
+  BROKER_OWN_COUNT=$(echo "$BROKER_RW_OWN_CONTACTS" | jq "[.[] | select(.owning_user_id == \"${BROKER_RW_OWN_MEMBER_ID}\")] | length" 2>/dev/null || echo "0")
   
-  if [ "$AGENT_COUNT" -eq "$AGENT_OWN" ]; then
-    log_test "Agent Data Isolation" "PASS" "Agent sees only own contacts ($AGENT_COUNT)"
+  if [ "$BROKER_RW_OWN_COUNT" -eq "$BROKER_OWN_COUNT" ]; then
+    log_test "Broker Data Isolation" "PASS" "Broker sees only own contacts ($BROKER_RW_OWN_COUNT)"
   else
-    log_test "Agent Data Isolation" "FAIL" "Agent sees $AGENT_COUNT contacts, $AGENT_OWN are own"
+    log_test "Broker Data Isolation" "FAIL" "Broker sees $BROKER_RW_OWN_COUNT contacts, $BROKER_OWN_COUNT are own"
   fi
   else
-    log_test "Agent Data Isolation" "SKIP" "Failed to get member ID for Agent"
+    log_test "Broker Data Isolation" "SKIP" "Failed to get member ID for Broker"
   fi
 else
-  log_test "Agent Data Isolation" "SKIP" "Failed to authenticate Agent (rate limit or user not available)"
+  log_test "Broker Data Isolation" "SKIP" "Failed to authenticate Broker (rate limit or user not available)"
 fi
 
 # Test 8: Unauthorized Update - Broker cannot update other broker's contact
@@ -306,7 +306,7 @@ if [ -z "$PROSPECT_CONTACT_ID" ] && [ -n "$BROKER1_TOKEN" ] && [ "$BROKER1_TOKEN
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"first_name\": \"Unauthorized\",
       \"last_name\": \"Test\",
       \"email\": \"unauthorized.test@example.com\",

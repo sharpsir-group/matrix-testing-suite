@@ -85,11 +85,8 @@ get_member_id() {
   # Use service role key if available, otherwise use the user's token
   AUTH_HEADER="${SERVICE_ROLE_KEY:-$token}"
   
-  MEMBER_RESPONSE=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/members?user_id=eq.${user_id}&select=id,member_type,office_id" \
-    -H "apikey: ${ANON_KEY}" \
-    -H "Authorization: Bearer ${AUTH_HEADER}")
-  
-  echo "$MEMBER_RESPONSE" | jq -r 'if type=="array" then .[0].id // empty else .id // empty end' 2>/dev/null || echo ""
+  # DEPRECATED: Members table removed - user_id is now used directly
+  echo "$user_id"
 }
 
 echo "=== New Meeting Functional Tests ==="
@@ -131,7 +128,7 @@ fi
 
 # Get or create a contact for meetings
 if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
-  CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?owning_member_id=eq.${BROKER1_MEMBER_ID}&select=id&limit=1" \
+  CONTACTS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/contacts?owning_user_id=eq.${BROKER1_MEMBER_ID}&select=id&limit=1" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${BROKER1_TOKEN}")
   
@@ -146,7 +143,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
       -H "Prefer: return=representation" \
       -d "{
         \"tenant_id\": \"${TENANT_ID}\",
-        \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+        \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
         \"first_name\": \"Meeting\",
         \"last_name\": \"Client\",
         \"email\": \"meeting.client.${TIMESTAMP}@example.com\",
@@ -172,7 +169,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"contact_id\": \"${CONTACT_ID}\",
       \"event_type\": \"BuyerShowing\",
       \"event_status\": \"Scheduled\",
@@ -223,7 +220,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"contact_id\": \"${CONTACT_ID}\",
       \"event_type\": \"SellerMeeting\",
       \"event_status\": \"Scheduled\",
@@ -273,7 +270,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"event_type\": \"BuyerShowing\",
       \"event_status\": \"Scheduled\",
       \"event_datetime\": \"${FUTURE_DATE}\",
@@ -305,7 +302,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"event_type\": \"SellerMeeting\",
       \"event_status\": \"Scheduled\",
       \"event_datetime\": \"${FUTURE_DATE}\",
@@ -328,7 +325,7 @@ fi
 # Test 5: Verify Buyer Meeting Count
 echo "Test 5: Verifying Buyer Meeting Count..."
 if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
-  BUYER_MEETINGS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/entity_events?event_type=eq.BuyerShowing&select=id&owning_member_id=eq.${BROKER1_MEMBER_ID}" \
+  BUYER_MEETINGS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/entity_events?event_type=eq.BuyerShowing&select=id&owning_user_id=eq.${BROKER1_MEMBER_ID}" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${BROKER1_TOKEN}")
   
@@ -346,7 +343,7 @@ fi
 # Test 6: Verify Seller Meeting Count
 echo "Test 6: Verifying Seller Meeting Count..."
 if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
-  SELLER_MEETINGS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/entity_events?event_type=eq.SellerMeeting&select=id&owning_member_id=eq.${BROKER1_MEMBER_ID}" \
+  SELLER_MEETINGS=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/entity_events?event_type=eq.SellerMeeting&select=id&owning_user_id=eq.${BROKER1_MEMBER_ID}" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${BROKER1_TOKEN}")
   
@@ -370,7 +367,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Content-Type: application/json" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"event_type\": \"BuyerShowing\"
     }")
   
@@ -401,7 +398,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Content-Type: application/json" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"event_type\": \"SellerMeeting\",
       \"event_status\": \"Scheduled\",
       \"event_datetime\": \"$(date -u -Iseconds --date='tomorrow 15:00')\",
@@ -437,7 +434,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"event_type\": \"BuyerShowing\",
       \"event_status\": \"Scheduled\",
       \"event_datetime\": \"${FUTURE_DATE}\",
@@ -473,7 +470,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ]; then
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER1_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER1_MEMBER_ID}\",
       \"event_type\": \"SellerMeeting\",
       \"event_status\": \"Scheduled\",
       \"event_datetime\": \"${FUTURE_DATE}\",
@@ -499,12 +496,12 @@ fi
 # Test 11: Data Isolation - Broker Owns Their Meetings
 echo "Test 11: Data Isolation - Broker Owns Their Meetings..."
 if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER1_MEMBER_ID" ] && [ -n "$BUYER_MEETING_ID" ]; then
-  # Verify owning_member_id matches broker1
-  VERIFY_OWNER=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/entity_events?id=eq.${BUYER_MEETING_ID}&select=owning_member_id" \
+  # Verify owning_user_id matches broker1
+  VERIFY_OWNER=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/entity_events?id=eq.${BUYER_MEETING_ID}&select=owning_user_id" \
     -H "apikey: ${ANON_KEY}" \
     -H "Authorization: Bearer ${BROKER1_TOKEN}")
   
-  OWNER_ID=$(echo "$VERIFY_OWNER" | jq -r 'if type=="array" then .[0].owning_member_id else .owning_member_id end // empty')
+  OWNER_ID=$(echo "$VERIFY_OWNER" | jq -r 'if type=="array" then .[0].owning_user_id else .owning_user_id end // empty')
   
   if [ "$OWNER_ID" = "$BROKER1_MEMBER_ID" ]; then
     log_test "New Meeting - Data Isolation" "PASS" "Meeting correctly owned by broker1 (Member ID: $OWNER_ID)"
@@ -558,7 +555,7 @@ if [ -n "$BROKER1_TOKEN" ] && [ -n "$BROKER2_TOKEN" ] && [ -n "$BROKER2_MEMBER_I
     -H "Prefer: return=representation" \
     -d "{
       \"tenant_id\": \"${TENANT_ID}\",
-      \"owning_member_id\": \"${BROKER2_MEMBER_ID}\",
+      \"owning_user_id\": \"${BROKER2_MEMBER_ID}\",
       \"event_type\": \"BuyerShowing\",
       \"event_status\": \"Scheduled\",
       \"event_datetime\": \"${FUTURE_DATE}\",

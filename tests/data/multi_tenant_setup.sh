@@ -141,7 +141,7 @@ create_test_user() {
   
   # Create member record if needed
   if [ -n "$USER_ID" ] && [ -n "$tenant_id" ]; then
-    MEMBER_CHECK=$(curl -s -X GET "${SUPABASE_URL}/rest/v1/members?user_id=eq.${USER_ID}&select=id" \
+    MEMBER_CHECK=$(curl -s -X GET "${SUPABASE_URL}# /rest/v1/members? (table removed)user_id=eq.${USER_ID}&select=id" \
       -H "apikey: ${SERVICE_ROLE_KEY:-${ANON_KEY}}" \
       -H "Authorization: Bearer ${SERVICE_ROLE_KEY:-${ADMIN_TOKEN}}")
     
